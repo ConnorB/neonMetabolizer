@@ -1,31 +1,20 @@
-# Function name: request_NEON
-# Function purpose: pull data products necessary for two-station metabolism
-# modeling at NEON sites
-#
-# Arguments:
-# NEONsites     character string specifying 4-letter NEON site code to request
-#               data from (ex. `"HOPB"`). Can be more than one site (ex.
-#               `c("HOPB", "BLDE")` but be warned data pull will take longer)
-# startdate     YYYY-MM character string defining start month and year for
-#               data request
-# enddate       YYY-MM character string defining end month and year for
-#               data request
-
+#' Pull data products necessary for two-station metabolism modeling at NEON sites
+#'
+#' @param NEONsites character string specifying 4-letter NEON site code to
+#'   request data from (ex. `"HOPB"`). Can be more than one site
+#'   (ex.`c("HOPB", "BLDE")` but be warned data pull will take longer)
+#' @param startdate YYYY-MM character string defining start month and year for
+#'    data request
+#' @param enddate YYY-MM character string defining end month and year for
+#'    data request
+#' @return List of four dataframes, `data`, `k600_clean`, `k600_fit`, and
+#'    `k600_expanded`. NOTE: Explain in detail what these dataframes contain.
+#'
+#' @examples
+#' \dontrun{
+#' data <- request_NEON(NEONsites = "HOPB", startdate = "2018-01", enddate = "2018-12")
+#' }
 request_NEON <- function(NEONsites, startdate, enddate){
-  #### Load libraries ########################################################
-  # NOTE: remove and add as importFrom when reformatting function into package
-  #library(tidyverse)
-  #library(neonUtilities) # Built under R version 3.6.2
-  # Since neonUtilities is an old build, we need to tell R to ignore warnings
-  # thrown when downloading the NEON-water-quality localPressureDO package,
-  # otherwise the install will fail
-  #Sys.setenv(R_REMOTES_NO_ERRORS_FROM_WARNINGS = "true")
-  #devtools::install_github(repo = "NEONScience/NEON-water-quality/localPressureDO")
-  #library(localPressureDO)
-  #library(streamMetabolizer)
-  #devtools::install_github(repo = "NEONScience/NEON-reaeration/reaRate")
-  #library(reaRate)
-
   #### Input parameters ######################################################
   # Define parameters of interest necessary for metabolism modeling
   params <- c("DP1.20288.001", "DP1.20053.001", "DP1.00024.001",
