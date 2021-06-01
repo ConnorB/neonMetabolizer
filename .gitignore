@@ -1,0 +1,22 @@
+# Ignore history and RProject files
+*.Rhistory
+*.DS_Store
+/Data/.DS_Store
+*.Rproj
+.Rapp.history
+*Icon?
+*Icon
+/data/Icon
+
+# Ignore Rmd cache directories
+/cache/
+
+# Ignore any temp files that are created by Rmd
+*.utf9.md
+*.knit.md
+*.tmp
+.Rproj.user
+
+# Ignore large RData files and zip files
+*.RData
+*.zip
