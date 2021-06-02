@@ -13,6 +13,8 @@ LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
 Imports: devtools,
+    mcmc,
+    chron,
     dplyr,
     streamMetabolizer,
     neonUtilities,
@@ -20,5 +22,5 @@ Imports: devtools,
     reaRate
 Remotes: NEONScience/NEON-utilities/neonUtilities/,
     NEONScience/NEON-water-quality/localPressureDO/,
-    NEONScience/NEON-reaeration/reaRate
+    michelleckelly/NEON-reaeration/reaRate
 
