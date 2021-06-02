@@ -198,6 +198,7 @@ request_NEON <- function(NEONsites, startdate, enddate){
 
   #################### Reaeration Rate (K) Calculations #########################
   # Format reaeration data product
+  #devtools::install_github("michelleckelly/NEON-reaeration/reaRate")
   Reaeration_data <-
     reaRate::def.format.reaeration(rea_backgroundFieldCondData =
                                      Reaeration$rea_backgroundFieldCondData,
@@ -234,12 +235,30 @@ request_NEON <- function(NEONsites, startdate, enddate){
                                processingInfo = NULL)
 
   k600 <- k600_expanded$outputDF
-  k600_clean <- k600[k600$k600 > 0 & k600$travelTime > 0,]
+  k600_clean <- k600[which(k600$k600 > 0 & k600$travelTime > 0),]
 
   # Linear model of Q vs K600
   lmk600 <- lm(k600 ~ meanQ, data = k600_clean)
 
   ################### Output data to user #######################################
+  # Remove dataframes from the environment that are generated within the
+  # functions
+  rm(BP_1min)
+  rm(BP_30min)
+  rm(readme_00004)
+  rm(readme_20053)
+  rm(readme_20288)
+  rm(sensor_positions_00004)
+  rm(sensor_positions_20053)
+  rm(sensor_positions_20288)
+  rm(variables_00004)
+  rm(variables_20053)
+  rm(variables_20288)
+  rm(TSW_30min)
+  rm(TSW_5min)
+  rm(waq_instantaneous)
+
+  # Output to user
   output <- list(data = data,
                  k600_clean = k600_clean,
                  k600_fit = lmk600,
