@@ -2,7 +2,7 @@
 % Please edit documentation in R/request_NEON.R
 \name{request_NEON}
 \alias{request_NEON}
-\title{Pull data products necessary for two-station metabolism modeling at NEON sites}
+\title{Request data products from NEON API for two-station metabolism modeling}
 \usage{
 request_NEON(NEONsites, startdate, enddate)
 }
@@ -11,10 +11,10 @@ request_NEON(NEONsites, startdate, enddate)
 request data from (ex. \code{"HOPB"}). Can be more than one site
 (ex.\code{c("HOPB", "BLDE")} but be warned data pull will take longer)}
 
-\item{startdate}{YYYY-MM character string defining start month and year for
+\item{startdate}{YYYY-MM character string defining start year and monthfor
 data request}
 
-\item{enddate}{YYY-MM character string defining end month and year for
+\item{enddate}{YYYY-MM character string defining end year and month for
 data request}
 }
 \value{
@@ -22,10 +22,40 @@ List of four dataframes, \code{data}, \code{k600_clean}, \code{k600_fit}, and
 \code{k600_expanded}. NOTE: Explain in detail what these dataframes contain.
 }
 \description{
-Pull data products necessary for two-station metabolism modeling at NEON sites
+\code{request_NEON} communicates with NEON API to request DO,
+water temperature, PAR, discharge, depth, and water quality data for the
+time period and monitoring station(s) of interest (using NEONScience's
+\code{neonUtilities::loadByProduct}). DO
+percent saturation is corrected for local elevation
+using NEONScience's \code{localPressureDO::calcBK_eq},
+and local time is converted to solar time using
+\code{streamMetabolizer::convert_UTC_to_solartime}).
+}
+\details{
+\code{request_NEON} additionally requests salt and conductivity slug data
+necessary for reaeration rate (K) calculations, and displays an
+interactive GUI to the user to identify peaks in slug transport using
+NEONScience's \code{reaRate::def.calc.reaeration}. Afterwards,
+K600 values are calculated based on the user's input.
+
+Returned is a list containing:
+(1) \code{data}: a formatted dataframe with all raw data necessary for
+the user to model two-station stream metabolism,
+(2) \code{k600_clean}:describe here,
+(3) \code{k600_fit}: describe here,
+(4) \code{k600_expanded}: describe here.
 }
 \examples{
 \dontrun{
 data <- request_NEON(NEONsites = "HOPB", startdate = "2018-01", enddate = "2018-12")
 }
+
+}
+\seealso{
+\url{https://github.com/NEONScience/NEON-utilities/neonUtilities/}
+for details on \code{neonUtilities} package,
+\url{https://github.com/NEONScience/NEON-water-quality/localPressureDO}
+for details on \code{localPressureDO} package,
+\url{https://github.com/NEONScience/NEON-reaeration/reaRate} for details
+on \code{reaRate} package.
 }
