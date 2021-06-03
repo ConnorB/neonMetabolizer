@@ -195,6 +195,15 @@ request_NEON <- function(NEONsites, startdate, enddate){
   # Convert from UTC to solar time
   data$solarTime <- streamMetabolizer::convert_UTC_to_solartime(data$DateTime_UTC,
                                                                 longitude = data$referenceLongitude)
+  # Convert solarTime column to chron object
+  data <- data %>% mutate(date = lubridate::date(solarTime),
+                          time = paste(lubridate::hour(solarTime),
+                                       lubridate::minute(solarTime),
+                                       lubridate::second(solarTime), sep = ":"))
+  # Convert to chron object
+  data$dtime <- chron(dates = as.character(data$date),
+                      times = as.character(data$time),
+                      format = c(dates = "y-m-d", times = "h:m:s"))
 
   #################### Reaeration Rate (K) Calculations #########################
   # Format reaeration data product
