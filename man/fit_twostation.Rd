@@ -4,11 +4,12 @@
 \alias{fit_twostation}
 \title{Model two-station stream metabolism}
 \usage{
-fit_twostation(data)
+fit_twostation(data, k600_fit)
 }
 \arguments{
-\item{data}{Dataframe containing formatted raw two station data, as
-returned by @request_NEON in $data}
+\item{data}{Dataframe of raw data as returned in the first object from @request_NEON 's output list}
+
+\item{k600_fit}{Linear model output for the relationship between mean Q and K600 at the site, the third object returned by @request_NEON}
 }
 \value{
 
