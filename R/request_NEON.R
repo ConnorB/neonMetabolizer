@@ -187,6 +187,7 @@ request_NEON <- function(NEONsites, startdate, enddate){
     dplyr::mutate(HOR.VER = regmatches(HOR.VER, regexpr(pattern = "^\\d{3}",
                                                         text = HOR.VER)),
                   HOR.VER = dplyr::recode(HOR.VER, "101" = "S1", "102" = "S2")) %>%
+    dplyr::filter(HOR.VER == "S1" | HOR.VER == "S2") %>%
     dplyr::rename(horizontalPosition = HOR.VER)
 
   # Add longitude for use in solartime conversion
@@ -196,14 +197,34 @@ request_NEON <- function(NEONsites, startdate, enddate){
   data$solarTime <- streamMetabolizer::convert_UTC_to_solartime(data$DateTime_UTC,
                                                                 longitude = data$referenceLongitude)
   # Convert solarTime column to chron object
-  data <- data %>% mutate(date = lubridate::date(solarTime),
-                          time = paste(lubridate::hour(solarTime),
-                                       lubridate::minute(solarTime),
-                                       lubridate::second(solarTime), sep = ":"))
+  data <- data %>% dplyr::mutate(date = lubridate::date(solarTime),
+                                 time = paste(lubridate::hour(solarTime),
+                                 lubridate::minute(solarTime),
+                                 lubridate::second(solarTime), sep = ":"))
   # Convert to chron object
-  data$dtime <- chron(dates = as.character(data$date),
-                      times = as.character(data$time),
-                      format = c(dates = "y-m-d", times = "h:m:s"))
+  data$dtime <- chron::chron(dates = as.character(data$date),
+                             times = as.character(data$time),
+                             format = c(dates = "y-m-d", times = "h:m:s"))
+
+  #### Identify time period with both S1 and S2 data present ##################
+  period <-tidyr::pivot_wider(data[c("DateTime_UTC", "horizontalPosition",
+                                        "DO_mgL")],
+                              id_cols = DateTime_UTC,
+                              names_from = horizontalPosition,
+                              values_from = DO_mgL, values_fn = mean) # adding in a mean function here - looks like some rows (2 in CUPE 2019) might be duplicates - check, possible subsetting issue
+  # Add column denoting what model type
+  period$modelingStrategy <- apply(period, MARGIN = 1, function(x) sum(is.na(x)))
+  # Recode, 0 NA == two station, 1 NA == single station, 2 NA == no data
+  period$modelingStrategy <-factor(period$modelingStrategy)
+  levels(period$modelingStrategy)[levels(period$modelingStrategy) =="0"] <-
+    "twoStation"
+  levels(period$modelingStrategy)[levels(period$modelingStrategy) =="1"] <-
+    "singleStation"
+  levels(period$modelingStrategy)[levels(period$modelingStrategy) =="2"] <-
+    "noData"
+  period <- period[c("DateTime_UTC", "modelingStrategy")]
+  # Join with raw data
+  data <- dplyr::right_join(data, period)
 
   #################### Reaeration Rate (K) Calculations #########################
   # Format reaeration data product
@@ -250,6 +271,14 @@ request_NEON <- function(NEONsites, startdate, enddate){
   lmk600 <- lm(k600 ~ meanQ, data = k600_clean)
 
   ################### Output data to user #######################################
+  # Output to user
+  output <- list(data = data,
+                 k600_clean = k600_clean,
+                 k600_fit = lmk600,
+                 k600_expanded = k600_expanded)
+
+  return(output)
+
   # Remove dataframes from the environment that are generated within the
   # functions
   rm(BP_1min)
@@ -266,12 +295,4 @@ request_NEON <- function(NEONsites, startdate, enddate){
   rm(TSW_30min)
   rm(TSW_5min)
   rm(waq_instantaneous)
-
-  # Output to user
-  output <- list(data = data,
-                 k600_clean = k600_clean,
-                 k600_fit = lmk600,
-                 k600_expanded = k600_expanded)
-
-  return(output)
 }
