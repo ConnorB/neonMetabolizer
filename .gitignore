@@ -20,3 +20,4 @@
 # Ignore large RData files and zip files
 *.RData
 *.zip
+data/*.rds
