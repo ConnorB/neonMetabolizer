@@ -6,12 +6,12 @@ startdate <- "2019-01"
 enddate <- "2019-12"
 
 #### Pull raw data and K from NEON API ########################################
-data <- request_NEON(NEONsites, startdate, enddate)
+#data <- request_NEON(NEONsites, startdate, enddate)
 
 # Save raw data
 #saveRDS(data, file = "data/Raw_KING_2019-01_2019-12.rds")
 # Load
-#data <- readRDS(file = "data/Raw_KING_2019-01_2019-12.rds")
+data <- readRDS(file = "data/Raw_KING_2019-01_2019-12.rds")
 
 #### Visualize raw data #######################################################
 library(ggplot2)
@@ -55,3 +55,5 @@ ggplot(data = data$data, aes(x = solarTime, y = modelingStrategy,
         legend.position = "bottom")
 
 #### Fit 2 station metabolism model to raw data ###############################
+
+
