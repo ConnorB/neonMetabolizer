@@ -12,7 +12,7 @@
 #     downName      Character name of downstream station (ex. "S2")
 O2TimeSeries <- function(GPP, ER, O2data, Kmean, z, tt, upName, downName) {
   # Ungroup O2data
-  O2data <- O2data %>% ungroup()
+  O2data <- O2data %>% dplyr::ungroup()
 
   #number of 5 min readings bewteen up and down probe corresponding
   # to travel time tt
@@ -23,21 +23,21 @@ O2TimeSeries <- function(GPP, ER, O2data, Kmean, z, tt, upName, downName) {
   # calls are designed to work with our data structure.
 
   # Seperate data into upstream and downstream sections
-  updata <- O2data[O2data$`river station` == upName,]
-  downdata <- O2data[O2data$`river station` == downName,]
+  updata <- O2data[O2data$horizontalPosition == upName,]
+  downdata <- O2data[O2data$horizontalPosition == downName,]
 
-  tempup <- updata$temp[1:as.numeric(length(updata$temp)-lag)] # trim the end by the lag
-  tempdown <- downdata$temp[(1+lag):length(downdata$temp)]
+  tempup <- updata$WaterTemp_C[1:as.numeric(length(updata$WaterTemp_C)-lag)] # trim the end by the lag
+  tempdown <- downdata$WaterTemp_C[(1+lag):length(downdata$WaterTemp_C)]
 
-  oxyup <- updata$oxy[1:as.numeric(length(updata$temp)-lag)]
+  oxyup <- updata$DO_mgL[1:as.numeric(length(updata$WaterTemp_C)-lag)]
   # define osat
-  osat <- updata$DO.sat[1:as.numeric(length(updata$temp)-lag)]
-  oxydown <- downdata$oxy[(1+lag):length(downdata$temp)]
+  osat <- updata$DOsat_pct[1:as.numeric(length(updata$WaterTemp_C)-lag)]
+  oxydown <- downdata$DO_mgL[(1+lag):length(downdata$WaterTemp_C)]
 
-  timeup <- updata$dtime[1:(length(updata$temp)-lag)]
-  timedown <- downdata$dtime[(1+lag):length(downdata$temp)]
+  timeup <- updata$dtime[1:(length(updata$WaterTemp_C)-lag)]
+  timedown <- downdata$dtime[(1+lag):length(downdata$WaterTemp_C)]
 
-  light <- downdata$light
+  light <- downdata$Light_PAR
 
   # Initialize an empty vector
   modeledO2 <- numeric(length(oxyup))

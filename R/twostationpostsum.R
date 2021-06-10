@@ -1,6 +1,8 @@
 #' Calculate two station MCMC during one day. Internal function. Function runs
 #' the MCMC and returns posterior distributions
 #'
+#' @importFrom magrittr %>%
+#'
 #' O2data    Dataframe containing formatted raw two station data, as
 #'           returned by @request_NEON in $data
 #' upName    Character string denoting name of upstream station (ex. "S1")
@@ -14,8 +16,6 @@
 #' scale
 twostationpostsum <- function(O2data, upName, downName, start, z, tt, Kmean, Ksd,
                               nbatch, scale) {
-  # Add date column
-  O2data <- O2data %>% group_by(date = date(datetime))
   # Create list of unique dates in data
   dateList <- unique(O2data$date)
 
@@ -37,11 +37,9 @@ twostationpostsum <- function(O2data, upName, downName, start, z, tt, Kmean, Ksd
 
   # For loop iterating through each day of data
   for (i in 1:length(dateList)){
-    # Subset data to single day of interest (ith date in date string)
-    data <- subset(O2data, date == dateList[i])
     # Seperate data into upstream and downstream sections
-    updata <- data[data$`river station` == upName,]
-    downdata <- data[data$`river station` == downName,]
+    updata <- O2data[O2data$horizontalPosition == upName,]
+    downdata <- O2data[O2data$horizontalPosition == downName,]
 
     # NOTE: In Hall et al, the number below was 0.00347222, which corresponds to:
     # 0.00347222 days = 5 minutes, as their O2 sensors took 5-minute readings.
@@ -55,32 +53,31 @@ twostationpostsum <- function(O2data, upName, downName, start, z, tt, Kmean, Ksd
     # is the value that is the travel time later than oxy up.  The below calls
     # are designed to work with our data structure.
 
-    if (length(updata$temp) < lag) {
+    if (length(updata$DO_mgL) < lag) {
       # If there is less data during a day than the lag interval, move to next day
       message("ERROR: model not computed for ", dateList[i], " as insufficient observations provided.")
       break
     } else{
       # Else continue
-      tempup <- updata$temp[1:as.numeric(length(updata$temp)-lag)] # trim the end by the lag
-      oxyup <- updata$oxy[1:as.numeric(length(updata$temp)-lag)]
-      # define osat
-      osat <- updata$DO.sat[1:as.numeric(length(updata$temp)-lag)]
-
-      tempdown <- downdata$temp[(1+lag):length(downdata$temp)]
-      oxydown <- downdata$oxy[(1+lag):length(downdata$temp)]
-
-      light <- downdata$light
+      tempup <- updata$WaterTemp_C[1:as.numeric(length(updata$WaterTemp_C)-lag)] # trim the end by the lag
+      oxyup <- updata$DO_mgL[1:as.numeric(length(updata$WaterTemp_C)-lag)]
+      osat <- updata$DOsat_pct[1:as.numeric(length(updata$WaterTemp_C)-lag)]
+      tempdown <- downdata$WaterTemp_C[(1+lag):length(downdata$WaterTemp_C)]
+      oxydown <- downdata$DO_mgL[(1+lag):length(downdata$WaterTemp_C)]
+      light <- downdata$Light_PAR
 
       # perform MCMC
       # see documentation on mcmc
-      met.post <- metrop(tspost, initial = start, nbatch = nbatch, scale = scale,
-                         tempup = tempup, tempdown = tempdown, oxyup = oxyup,
-                         osat = osat,
-                         oxydown = oxydown,  z = z, light = light, tt = tt,
-                         Kmean = Kmean, Ksd = Ksd, debug = TRUE)
+      met.post <- mcmc::metrop(tspost, initial = start, nbatch = nbatch,
+                               scale = scale,tempup = tempup,
+                               tempdown = tempdown, oxyup = oxyup,
+                               osat = osat, oxydown = oxydown,  z = z,
+                               light = light, tt = tt, Kmean = K600_mean,
+                               Ksd = K600_sd, debug = TRUE)
 
       # trying to troubleshoot here
-      print(plot(ts(met.post$batch), main = dateList[i]))
+      plot(ts(met.post$batch), main = dateList[i])
+
 
       # Calculate overall estimates for each day
       gppr <- quantile(met.post$batch[(2000:nbatch),1], c(0.025, 0.5, 0.975))

@@ -46,7 +46,7 @@ tspost <- function(MET, tempup, tempdown, oxyup, oxydown, light, tt, z, osat,
   prior <- (dnorm(GPP, mean=10, sd=10, log=TRUE)) +
     (dnorm(ER, mean=-10, sd=10, log=TRUE)) +
     #(dnorm(K, mean=Kmean, sd=Ksd, log=TRUE)) +
-    (dnorm(K, mean=Kprior_mean, sd=Kprior_sd, log=TRUE))
+    (dnorm(K, mean=Kmean, sd=Ksd, log=TRUE))
 
   return(loglik + prior)
 }
