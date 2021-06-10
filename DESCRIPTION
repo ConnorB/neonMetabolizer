@@ -19,7 +19,8 @@ Imports: devtools,
     streamMetabolizer,
     neonUtilities,
     localPressureDO,
-    reaRate
+    reaRate,
+    mcmc
 Remotes: NEONScience/NEON-utilities/neonUtilities/,
     NEONScience/NEON-water-quality/localPressureDO/,
     michelleckelly/NEON-reaeration/reaRate
