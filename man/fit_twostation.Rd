@@ -4,12 +4,12 @@
 \alias{fit_twostation}
 \title{Model two-station stream metabolism}
 \usage{
-fit_twostation(data, k600_fit)
+fit_twostation(data, nbatch = 1e+05)
 }
 \arguments{
-\item{data}{Dataframe of raw data as returned in the first object from @request_NEON 's output list}
+\item{data}{The output from @request_NEON function, a list of 4 objects: \code{data}: dataframe containing raw site data, \code{k600_clean}: Dataframe of summarized K600 estimates and parameters used for calculations,\code{k600_fit}: Linear model output for the relationship between mean Q and K600 at the site, \code{k600_expanded}: dataframe of all data used in K600 calculations}
 
-\item{k600_fit}{Linear model output for the relationship between mean Q and K600 at the site, the third object returned by @request_NEON}
+\item{nbatch}{Numeric, number of batches for Bayesian chains. Default is 100,000.}
 }
 \value{
 
