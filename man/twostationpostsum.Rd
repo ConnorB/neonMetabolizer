@@ -19,6 +19,15 @@ twostationpostsum(
 )
 }
 \description{
-Calculate two station MCMC during one day. Internal function. Function runs
-the MCMC and returns posterior distributions
+O2data    Dataframe containing formatted raw two station data, as
+returned by request_NEON in $data
+upName    Character string denoting name of upstream station (ex. "S1")
+downName  Character string denoting name of downstream station (ex. "S2")
+init      Initial guess for the range of GPP and |ER|
+z         Numeric, average depth on day of modeling
+tt        Numeric, travel time between stations on day of modeling
+Kmean     Mean K for informative prior
+Ksd       Standard deviation of K for informative prior
+nbatch    Number of MCMC trials
+scale
 }
