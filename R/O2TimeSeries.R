@@ -14,7 +14,7 @@ O2TimeSeries <- function(GPP, ER, O2data, Kmean, z, tt, upName, downName) {
   # Ungroup O2data
   O2data <- O2data %>% dplyr::ungroup()
 
-  #number of 5 min readings bewteen up and down probe corresponding
+  #number of 15 min readings bewteen up and down probe corresponding
   # to travel time tt
   lag <- as.numeric(round(tt/0.0104166667))
 
