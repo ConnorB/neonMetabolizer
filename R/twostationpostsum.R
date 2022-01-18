@@ -70,8 +70,8 @@ twostationpostsum <- function(O2data, upName, downName, start, z, tt, Kmean, Ksd
                                scale = scale,tempup = tempup,
                                tempdown = tempdown, oxyup = oxyup,
                                osat = osat, oxydown = oxydown,  z = z,
-                               light = light, tt = tt, Kmean = K600_mean,
-                               Ksd = K600_sd, debug = TRUE)
+                               light = light, tt = tt, Kmean = Kmean,
+                               Ksd = Ksd, debug = TRUE)
 
       # trying to troubleshoot here
       plot(ts(met.post$batch), main = dateList[i])

@@ -52,9 +52,10 @@ request_NEON <- function(NEONsites, startdate, enddate){
   #### Input parameters ######################################################
   # Define parameters of interest necessary for metabolism modeling
   params <- c("DP1.20288.001", "DP1.20053.001", "DP1.00024.001",
-              "DP1.20033.001", "DP4.00130.001")
+              "DP1.20033.001", "DP4.00130.001", "DP1.20093.001",
+              "DP1.20072.001")
   names(params) <- c("WaterQual", "Temp", "PAR",
-                     "NO3", "Discharge")
+                     "NO3", "Discharge", "WaterChem", "AquaticPlants")
 
   #### Pull NEON data from api ##################################################
   for (i in seq_along(params)){
@@ -127,6 +128,57 @@ request_NEON <- function(NEONsites, startdate, enddate){
                   specificConductance_uScm = specificConductance) %>%
     dplyr::filter(lubridate::minute(DateTime_UTC) %in% c(0, 15, 30, 45))
 
+  ### Water chem ###
+  WC_data <-
+    WaterChem$swc_externalLabDataByAnalyte %>%
+    dplyr::select(siteID, namedLocation, startDate,
+                  analyte, analyteConcentration, analyteUnits) %>%
+    dplyr::mutate(namedLocation = stringr::str_extract(string = namedLocation,
+                                                       pattern = "\\w\\d$"),
+                  analyteUnits = dplyr::recode(analyteUnits,
+                                               "milligramsPerLiter" = "_mgL"),
+                  analyteUnits = tidyr::replace_na(analyteUnits, ""),
+                  analyte = paste0(analyte, analyteUnits)) %>%
+    dplyr::select(siteID, namedLocation, startDate, analyte, analyteConcentration) %>%
+    tidyr::pivot_wider(names_from = analyte, values_from = analyteConcentration,
+                       values_fn = mean) %>%
+    dplyr::rename(NO3NO2_mgNL = `NO3+NO2 - N_mgL`, NH4_mgNL = `NH4 - N_mgL`) %>%
+    dplyr::mutate(DIN_mgNL = NO3NO2_mgNL + NH4_mgNL,
+                  DIN_molNL = DIN_mgNL / 10^6 / 14,
+                  TDP_molL = TDP_mgL / 10^6 / 30,
+                  NP_molar = DIN_molNL / TDP_molL)
+
+  ### Pull percent cover from Aquatic Plant data ###
+  coverData <-
+    AquaticPlants$apc_pointTransect %>%
+    dplyr::select(siteID, pointNumber, transectDistance, collectDate,
+                  habitatType, substrate, remarks) %>%
+    dplyr::filter(collectDate >=
+                    lubridate::ymd_hms(paste0(startdate, "-01 00:00:00"),
+                                       tz = tz(collectDate)) &
+                    collectDate <=
+                    lubridate::ymd_hms(paste0(enddate, "-01 00:00:00"),
+                                       tz = tz(collectDate))) %>%
+    dplyr::group_by(siteID, pointNumber) %>%
+    dplyr::arrange(transectDistance, .by_group = TRUE)
+
+  percCover_full <-
+    coverData %>%
+    dplyr::count(substrate) %>%
+    dplyr::rename(transect = pointNumber, observationCount = n) %>%
+    dplyr::mutate(sumObservations = sum(observationCount),
+                  percentCover = observationCount / sumObservations * 100)
+
+  percCover_summary <-
+    percCover_full %>%
+    dplyr::select(transect, substrate, percentCover) %>%
+    tidyr::pivot_wider(names_from = substrate, values_from = percentCover) %>%
+    dplyr::rename(coarseWoodyDebris = CWD, leafLitter = `leaf litter`) %>%
+    replace(is.na(.), 0) %>%
+    dplyr::ungroup(transect) %>%
+    dplyr::select(-transect) %>%
+    dplyr::summarise_all(mean)
+
   ### Temp ###
   Temp_data <-
     Temp$TSW_5min %>%
@@ -193,39 +245,6 @@ request_NEON <- function(NEONsites, startdate, enddate){
   # Add longitude for use in solartime conversion
   data <- dplyr::right_join(data, sensorPos, by = c("siteID","horizontalPosition"))
 
-  # Convert from UTC to solar time
-  data$solarTime <- streamMetabolizer::convert_UTC_to_solartime(data$DateTime_UTC,
-                                                                longitude = data$referenceLongitude)
-  # Convert solarTime column to chron object
-  data <- data %>% dplyr::mutate(date = lubridate::date(solarTime),
-                                 time = paste(lubridate::hour(solarTime),
-                                 lubridate::minute(solarTime),
-                                 lubridate::second(solarTime), sep = ":"))
-  # Convert to chron object
-  data$dtime <- chron::chron(dates = as.character(data$date),
-                             times = as.character(data$time),
-                             format = c(dates = "y-m-d", times = "h:m:s"))
-
-  #### Identify time period with both S1 and S2 data present ##################
-  period <-tidyr::pivot_wider(data[c("DateTime_UTC", "horizontalPosition",
-                                        "DO_mgL")],
-                              id_cols = DateTime_UTC,
-                              names_from = horizontalPosition,
-                              values_from = DO_mgL, values_fn = mean) # adding in a mean function here - looks like some rows (2 in CUPE 2019) might be duplicates - check, possible subsetting issue
-  # Add column denoting what model type
-  period$modelingStrategy <- apply(period, MARGIN = 1, function(x) sum(is.na(x)))
-  # Recode, 0 NA == two station, 1 NA == single station, 2 NA == no data
-  period$modelingStrategy <-factor(period$modelingStrategy)
-  levels(period$modelingStrategy)[levels(period$modelingStrategy) =="0"] <-
-    "twoStation"
-  levels(period$modelingStrategy)[levels(period$modelingStrategy) =="1"] <-
-    "singleStation"
-  levels(period$modelingStrategy)[levels(period$modelingStrategy) =="2"] <-
-    "noData"
-  period <- period[c("DateTime_UTC", "modelingStrategy")]
-  # Join with raw data
-  data <- dplyr::right_join(data, period)
-
   #################### Reaeration Rate (K) Calculations #########################
   # Format reaeration data product
   #devtools::install_github("michelleckelly/NEON-reaeration/reaRate")
@@ -273,6 +292,8 @@ request_NEON <- function(NEONsites, startdate, enddate){
   ################### Output data to user #######################################
   # Output to user
   output <- list(data = data,
+                 waterQual = WC_data,
+                 percentCover = percCover_summary,
                  k600_clean = k600_clean,
                  k600_fit = lmk600,
                  k600_expanded = k600_expanded)
