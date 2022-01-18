@@ -20,8 +20,9 @@ Imports: devtools,
     neonUtilities,
     localPressureDO,
     reaRate,
-    mcmc
+    imputeTS,
+    magrittr
 Remotes: NEONScience/NEON-utilities/neonUtilities/,
     NEONScience/NEON-water-quality/localPressureDO/,
-    michelleckelly/NEON-reaeration/reaRate
+    NEONScience/NEON-reaeration/reaRate/
 
