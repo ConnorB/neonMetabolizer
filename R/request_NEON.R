@@ -173,7 +173,7 @@ request_NEON <- function(NEONsites, startdate, enddate){
     percCover_full %>%
     dplyr::select(transect, substrate, percentCover) %>%
     tidyr::pivot_wider(names_from = substrate, values_from = percentCover) %>%
-    dplyr::rename(coarseWoodyDebris = CWD, leafLitter = `leaf litter`) %>%
+    #dplyr::rename(coarseWoodyDebris = CWD, leafLitter = `leaf litter`) %>%
     replace(is.na(.), 0) %>%
     dplyr::ungroup(transect) %>%
     dplyr::select(-transect) %>%
@@ -224,17 +224,18 @@ request_NEON <- function(NEONsites, startdate, enddate){
 
   ### Merge all into data dataframe ###
   data <- dplyr::full_join(WQ_data, NO3_data, by = c("siteID","DateTime_UTC"))
-  data <- dplyr::left_join(data, Temp_data,
+  data <- dplyr::full_join(data, Temp_data,
                            by = c("siteID","horizontalPosition","DateTime_UTC"))
-  data <- dplyr::left_join(data, AirPres_data, by = c("siteID","DateTime_UTC"))
-  data <- dplyr::left_join(data, Discharge_data, by = c("siteID","DateTime_UTC"))
-  data <- dplyr::left_join(data, PAR_data, by = c("siteID","DateTime_UTC"))
+  data <- dplyr::full_join(data, AirPres_data, by = c("siteID","DateTime_UTC"))
+  data <- dplyr::full_join(data, Discharge_data, by = c("siteID","DateTime_UTC"))
+  data <- dplyr::full_join(data, PAR_data, by = c("siteID","DateTime_UTC"))
 
   ### Convert datetime to chron solartime ###
   # Grab longitude of currently in use sensor stations
   sensorPos <-
     WaterQual$sensor_positions_20288 %>%
-    dplyr::filter(end == "") %>%
+    dplyr::filter(is.na(end)) %>%
+    #MICHELLE NOTE end is now denoted as NA rather than empty set "" for current sensors
     dplyr::select(siteID, HOR.VER, referenceLongitude) %>%
     dplyr::mutate(HOR.VER = regmatches(HOR.VER, regexpr(pattern = "^\\d{3}",
                                                         text = HOR.VER)),
@@ -243,19 +244,23 @@ request_NEON <- function(NEONsites, startdate, enddate){
     dplyr::rename(horizontalPosition = HOR.VER)
 
   # Add longitude for use in solartime conversion
-  data <- dplyr::right_join(data, sensorPos, by = c("siteID","horizontalPosition"))
+  data <- dplyr::full_join(data, sensorPos, by = c("siteID","horizontalPosition"))
 
   #################### Reaeration Rate (K) Calculations #########################
   # Format reaeration data product
-  #devtools::install_github("michelleckelly/NEON-reaeration/reaRate")
+  # MICHELLE NOTE: UNCOMMENT reaRate:: when bug fixes are made to neon reaRate package, use local version of function for now
   Reaeration_data <-
-    reaRate::def.format.reaeration(rea_backgroundFieldCondData =
+    #reaRate::
+    def.format.reaeration(rea_backgroundFieldCondData =
                                      Reaeration$rea_backgroundFieldCondData,
                                    rea_backgroundFieldSaltData =
                                      Reaeration$rea_backgroundFieldSaltData,
-                                   rea_fieldData = Reaeration$rea_fieldData,
+                                   rea_fieldData =
+                                     Reaeration$rea_fieldData,
                                    rea_plateauMeasurementFieldData =
                                      Reaeration$rea_plateauMeasurementFieldData,
+                                   rea_plateauSampleFieldData =
+                                     Reaeration$rea_plateauSampleFieldData,
                                    rea_externalLabDataSalt =
                                      Reaeration$rea_externalLabDataSalt,
                                    rea_externalLabDataGas =
@@ -264,7 +269,9 @@ request_NEON <- function(NEONsites, startdate, enddate){
                                      Reaeration$rea_widthFieldData,
                                    dsc_fieldData = FieldDischarge$dsc_fieldData,
                                    dsc_individualFieldData =
-                                     FieldDischarge$dsc_individualFieldData)
+                                     FieldDischarge$dsc_individualFieldData,
+                                   dsc_fieldDataADCP =
+                                     FieldDischarge$dsc_fieldDataADCP)
 
   k600_expanded <-
     reaRate::def.calc.reaeration(inputFile = Reaeration_data,
@@ -290,6 +297,15 @@ request_NEON <- function(NEONsites, startdate, enddate){
   lmk600 <- lm(k600 ~ meanQ, data = k600_clean)
 
   ################### Output data to user #######################################
+  # Remove dataframes from the environment that are generated within the
+  # functions
+  rm(list = c("BP_1min", "BP_30min", "readme_00004", "readme_20053",
+              "readme_20288", "sensor_positions_00004",
+              "sensor_positions_20053", "sensor_positions_20288",
+              "variables_00004", "variables_20053", "variables_20288",
+              "TSW_30min", "TSW_5min", "waq_instantaneous"),
+     envir = .GlobalEnv)
+
   # Output to user
   output <- list(data = data,
                  waterQual = WC_data,
@@ -299,21 +315,4 @@ request_NEON <- function(NEONsites, startdate, enddate){
                  k600_expanded = k600_expanded)
 
   return(output)
-
-  # Remove dataframes from the environment that are generated within the
-  # functions
-  rm(BP_1min)
-  rm(BP_30min)
-  rm(readme_00004)
-  rm(readme_20053)
-  rm(readme_20288)
-  rm(sensor_positions_00004)
-  rm(sensor_positions_20053)
-  rm(sensor_positions_20288)
-  rm(variables_00004)
-  rm(variables_20053)
-  rm(variables_20288)
-  rm(TSW_30min)
-  rm(TSW_5min)
-  rm(waq_instantaneous)
 }
