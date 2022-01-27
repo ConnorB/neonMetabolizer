@@ -53,9 +53,10 @@ request_NEON <- function(NEONsites, startdate, enddate){
   # Define parameters of interest necessary for metabolism modeling
   params <- c("DP1.20288.001", "DP1.20053.001", "DP1.00024.001",
               "DP1.20033.001", "DP4.00130.001", "DP1.20093.001",
-              "DP1.20072.001")
+              "DP1.20072.001", "DP1.00004.001")
   names(params) <- c("WaterQual", "Temp", "PAR",
-                     "NO3", "Discharge", "WaterChem", "AquaticPlants")
+                     "NO3", "Discharge", "WaterChem",
+                     "AquaticPlants", "Barometer")
 
   #### Pull NEON data from api ##################################################
   for (i in seq_along(params)){
@@ -101,14 +102,14 @@ request_NEON <- function(NEONsites, startdate, enddate){
     WaterQual$waq_instantaneous %>%
     dplyr::select(siteID, horizontalPosition, startDateTime,
                   specificConductance, dissolvedOxygen,
-                  dissolvedOxygenSatCorrected, pH, chlorophyll, turbidity) %>%
+                  seaLevelDissolvedOxygenSat,
+                  localDissolvedOxygenSat, pH, chlorophyll, turbidity) %>%
     dplyr::mutate(horizontalPosition = dplyr::recode(horizontalPosition,
                                                      "101" = "S1",
                                                      "102" = "S2"),
                   startDateTime = lubridate::with_tz(startDateTime,
                                                      tz = "UTC")) %>%
     dplyr::rename(DateTime_UTC = startDateTime, DO_mgL = dissolvedOxygen,
-                  DOsat_pct = dissolvedOxygenSatCorrected,
                   chlorophyll_ugL = chlorophyll, turbidity_NTU = turbidity,
                   specificConductance_uScm = specificConductance) %>%
     dplyr::filter(lubridate::minute(DateTime_UTC) %in% c(0, 15, 30, 45))
@@ -180,7 +181,7 @@ request_NEON <- function(NEONsites, startdate, enddate){
 
   ### Air pressure ###
   AirPres_data <-
-    BP_1min %>%
+    Barometer$BP_1min %>%
     dplyr::select(siteID, startDateTime, staPresMean) %>%
     dplyr::mutate(startDateTime = lubridate::with_tz(startDateTime,
                                                      tz = "UTC")) %>%
@@ -258,38 +259,44 @@ request_NEON <- function(NEONsites, startdate, enddate){
                                    dsc_fieldDataADCP =
                                      FieldDischarge$dsc_fieldDataADCP)
 
-  k600_expanded <-
-    reaRate::def.calc.reaeration(inputFile = Reaeration_data,
-                               loggerData = Reaeration$rea_conductivityFieldData,
-                               namedLocation = "namedLocation",
-                               injectionTypeName = "injectionType",
-                               eventID = "eventID",
-                               stationToInjectionDistance = "stationToInjectionDistance",
-                               plateauGasConc = "plateauGasConc",
-                               corrPlatSaltConc = "corrPlatSaltConc",
-                               hoboSampleID = "hoboSampleID",
-                               discharge = "fieldDischarge",
-                               waterTemp = "waterTemp",
-                               wettedWidth = "wettedWidth",
-                               plot = TRUE,
-                               savePlotPath = NULL,
-                               processingInfo = NULL)
+  # Check if reaeration data is only slug injections
+  if(any(Reaeration_data$injectionType %in% c("model","model - slug","model - CRI"))){
+    message(paste0("Reaeration measurement is model injection, therefore did not calculate gas loss rate."))
+    lmk600 <- NA
+    k600_clean <- NA
+    k600_expanded <- Reaeration_data
+  }else{
+    # If non-model reaeration data present, feed to reaeration calculation tool
+    k600_expanded <-
+      reaRate::def.calc.reaeration(inputFile = Reaeration_data,
+                                   loggerData = Reaeration$rea_conductivityFieldData,
+                                   namedLocation = "namedLocation",
+                                   injectionTypeName = "injectionType",
+                                   eventID = "eventID",
+                                   stationToInjectionDistance = "stationToInjectionDistance",
+                                   plateauGasConc = "plateauGasConc",
+                                   corrPlatSaltConc = "corrPlatSaltConc",
+                                   hoboSampleID = "hoboSampleID",
+                                   discharge = "fieldDischarge",
+                                   waterTemp = "waterTemp",
+                                   wettedWidth = "wettedWidth",
+                                   plot = TRUE,
+                                   savePlotPath = NULL,
+                                   processingInfo = NULL)
 
-  k600 <- k600_expanded$outputDF
-  k600_clean <- k600[which(k600$k600 > 0 & k600$travelTime > 0),]
+    k600 <- k600_expanded$outputDF
+    k600_clean <- k600[which(k600$k600 > 0 & k600$travelTime > 0),]
 
-  # Linear model of Q vs K600
-  lmk600 <- lm(k600 ~ meanQ, data = k600_clean)
+    # Linear model of Q vs K600
+    lmk600 <- lm(k600 ~ meanQ, data = k600_clean)
+  }
 
   ################### Output data to user #######################################
   # Remove dataframes from the environment that are generated within the
   # functions
-  rm(list = c("BP_1min", "BP_30min", "readme_00004", "readme_20053",
-              "readme_20288", "sensor_positions_00004",
-              "sensor_positions_20053", "sensor_positions_20288",
-              "variables_00004", "variables_20053", "variables_20288",
-              "TSW_30min", "TSW_5min", "waq_instantaneous"),
-     envir = .GlobalEnv)
+  suppressWarnings(rm(list = c("readme_20288", "sensor_positions_20288",
+                               "variables_20288","waq_instantaneous"),
+                      envir = .GlobalEnv))
 
   # Output to user
   output <- list(data = data,
