@@ -81,24 +81,9 @@ request_NEON <- function(NEONsites, startdate, enddate){
                                                  package = "expanded",
                                                  check.size = F)
 
-  #### Correct dissolved oxygen percent saturation ##############################
-  # Pull DO-related products for sites of interest
-  DOdata <- localPressureDO::getAndFormatData(siteName = NEONsites,
-                                              startDate = startdate,
-                                              endDate = enddate)
-  # Calculate DO percent saturation at local using the Benson-Krause equation,
-  # Which is the same method as used by the USGS since 2011
-  DOcalcd <- localPressureDO::calcBK_eq(DOdata)
-  # Trim DOcalcd dataset
-  DOcalcd <-
-    DOcalcd %>%
-    dplyr::select(horizontalPosition, startDateTime, siteID,
-                  dissolvedOxygenSatCorrected)
-  # Remove DO percent saturation from WaterQual
-  # Merge corrected DO percent saturation with WaterQual dataset
-  WaterQual$waq_instantaneous <-
-    dplyr::right_join(WaterQual$waq_instantaneous, DOcalcd,
-                      by = c("siteID", "startDateTime", "horizontalPosition"))
+  # NOTE: as of 18-Jan-2022, Water Quality data product now includes local DO
+  # percent saturation. Therefore, correcting dissolved oxygen percent saturation
+  # using localPressureDO package is unneeded.
 
   #### Format and merge dataframes ##############################################
   # S1 = upstream, S2 = downstream
