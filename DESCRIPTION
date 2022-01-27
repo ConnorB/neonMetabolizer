@@ -18,11 +18,9 @@ Imports: devtools,
     dplyr,
     streamMetabolizer,
     neonUtilities,
-    localPressureDO,
     reaRate,
     imputeTS,
     magrittr
 Remotes: NEONScience/NEON-utilities/neonUtilities/,
-    NEONScience/NEON-water-quality/localPressureDO/,
     NEONScience/NEON-reaeration/reaRate/
 
