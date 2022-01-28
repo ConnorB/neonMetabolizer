@@ -286,10 +286,23 @@ request_NEON <- function(NEONsites, startdate, enddate){
                                    processingInfo = NULL)
 
     k600 <- k600_expanded$outputDF
-    k600_clean <- k600[which(k600$k600 > 0 & k600$travelTime > 0),]
+    # Remove K estimates that are less than 0
+    k600_clean <- k600[which(k600$k600 > 0),]
 
     # Linear model of Q vs K600
     lmk600 <- lm(k600 ~ meanQ, data = k600_clean)
+    summary(lmk600)$coefficients[2]
+
+    # Plot
+    plot(x = k600_clean$meanQ,y = k600_clean$k600,
+         main = paste0(unique(k600_clean$siteID),
+                       ": Mean Q Against Estimated K600"),
+         xlab = "Mean Q", ylab = "k600")
+    abline(lmk600, lty = 2, col = "red")
+    mtext(paste0("k600 = ", round(summary(lmk600)$coefficients[1], 3), " + ",
+                 round(summary(lmk600)$coefficients[2], 3), " * MeanQ, ",
+                 "R^2 = ", round(summary(lmk600)$r.squared, 3), side = 3),
+          col = "red")
   }
 
   ################### Output data to user #######################################
