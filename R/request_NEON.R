@@ -291,7 +291,6 @@ request_NEON <- function(NEONsites, startdate, enddate){
 
     # Linear model of Q vs K600
     lmk600 <- lm(k600 ~ meanQ, data = k600_clean)
-    summary(lmk600)$coefficients[2]
 
     # Plot
     plot(x = k600_clean$meanQ,y = k600_clean$k600,
