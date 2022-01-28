@@ -260,13 +260,14 @@ request_NEON <- function(NEONsites, startdate, enddate){
                                      FieldDischarge$dsc_fieldDataADCP)
 
   # Check if reaeration data is only slug injections
-  if(any(Reaeration_data$injectionType %in% c("model","model - slug","model - CRI"))){
-    message(paste0("Reaeration measurement is model injection, therefore did not calculate gas loss rate."))
+  if(all(Reaeration_data$injectionType %in% c("model","model - slug","model - CRI"))){
+    # If every line of the Reaeration_data is a model injection
+    message(paste0("All reaeration measurements are model injection, therefore did not calculate gas loss rate."))
     lmk600 <- NA
     k600_clean <- NA
     k600_expanded <- Reaeration_data
-  }else{
-    # If non-model reaeration data present, feed to reaeration calculation tool
+  } else {
+    # Feed reaeration data to reaeration calculation tool
     k600_expanded <-
       reaRate::def.calc.reaeration(inputFile = Reaeration_data,
                                    loggerData = Reaeration$rea_conductivityFieldData,
