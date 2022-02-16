@@ -234,10 +234,8 @@ request_NEON <- function(NEONsites, startdate, enddate){
 
   #################### Reaeration Rate (K) Calculations #########################
   # Format reaeration data product
-  # MICHELLE NOTE: UNCOMMENT reaRate:: when bug fixes are made to neon reaRate package, use local version of function for now
   Reaeration_data <-
-    #reaRate::
-    def.format.reaeration(rea_backgroundFieldCondData =
+    reaRate::def.format.reaeration(rea_backgroundFieldCondData =
                                      Reaeration$rea_backgroundFieldCondData,
                                    rea_backgroundFieldSaltData =
                                      Reaeration$rea_backgroundFieldSaltData,
