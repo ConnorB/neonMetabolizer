@@ -5,8 +5,7 @@
 #' @param data Dataframe of metabolism parameter time series, `data` in list output of the @request_NEON function
 #' @param k600_clean Dataframe of summarized K600 estimates and parameters used for K600 calculations, `k600_clean` in list output of the @request_NEON function
 #' @param k600_fit Linear model output for the relationship between mean Q and K600 at the site, `k600_fit` in list output of the @request_NEON function
-#' @param tzone Character string containing the time zone of the NEON site, for computing local time. R must recognize this as a valid string for `Sys.timezone()`. If NULL, function will not compute local time at site.
-#'
+#' 
 #' @return
 #'
 #' @seealso
@@ -14,7 +13,7 @@
 #' @examples
 #'
 #' @export
-clean_NEON <-function(data, k600_clean, k600_fit, tzone = NULL){
+clean_NEON <-function(data, k600_clean, k600_fit){
   #### Create equal time breaks from start to end of data series ##############
   # Split data into two dataframes broken up by station
   rawData_S1 <- data %>% dplyr::filter(horizontalPosition == "S1")
@@ -71,6 +70,13 @@ clean_NEON <-function(data, k600_clean, k600_fit, tzone = NULL){
   data <- dplyr::full_join(rawData_S1, rawData_S2)
   # Arrange by date
   data <- dplyr::arrange(data, DateTime_UTC)
+  
+  #### Adjust PAR ##############################################################
+  # All nighttime PAR that's below 0 should be set to == 0. 
+  # Sometimes, esp. if large gaps in data/start of dataset, ARIMA will predict 
+  # PAR data as dipping below 0, but this is not possible, so hard set to 
+  # 0 if negative
+  data$Light_PAR[data$Light_PAR < 0] <- 0
   
   #### Keep only 15-minute dates ###############################################
   # Some sensor measurements are taken on a ~30 sec delay (ex. 12:15:30 at S2 
@@ -141,11 +147,6 @@ clean_NEON <-function(data, k600_clean, k600_fit, tzone = NULL){
   
   # Remove localDissolvedOxygenSat column
   data <- select(data, -c(seaLevelDissolvedOxygenSat, localDissolvedOxygenSat))
-  
-  #### Convert from UTC time to local time #####################################
-  if(exists("tzone")){
-    data$DateTime_Local <- lubridate::with_tz(data$DateTime_UTC, tzone = tzone)
-  }
   
   #### Convert from UTC time to solar time #####################################
   # Convert from UTC to solar time
