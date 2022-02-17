@@ -131,8 +131,7 @@ request_NEON <- function(NEONsites, startdate, enddate){
     dplyr::rename(NO3NO2_mgNL = `NO3+NO2 - N_mgL`, NH4_mgNL = `NH4 - N_mgL`) %>%
     dplyr::mutate(DIN_mgNL = NO3NO2_mgNL + NH4_mgNL,
                   DIN_molNL = DIN_mgNL / 10^6 / 14,
-                  TDP_molL = TDP_mgL / 10^6 / 30,
-                  NP_molar = DIN_molNL / TDP_molL)
+                  TDP_molL = TDP_mgL / 10^6 / 30)
 
   ### Pull percent cover from Aquatic Plant data ###
   coverData <-
@@ -220,8 +219,7 @@ request_NEON <- function(NEONsites, startdate, enddate){
   # Grab longitude of currently in use sensor stations
   sensorPos <-
     WaterQual$sensor_positions_20288 %>%
-    dplyr::filter(is.na(end)) %>%
-    #MICHELLE NOTE end is now denoted as NA rather than empty set "" for current sensors
+    dplyr::filter(referenceEnd == "") %>%
     dplyr::select(siteID, HOR.VER, referenceLongitude) %>%
     dplyr::mutate(HOR.VER = regmatches(HOR.VER, regexpr(pattern = "^\\d{3}",
                                                         text = HOR.VER)),

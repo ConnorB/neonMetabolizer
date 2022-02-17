@@ -2,8 +2,9 @@
 #'
 #' @importFrom magrittr %>%
 #'
-#' @param data The output from @request_NEON function, a list of 4 objects: `data`: dataframe containing raw site data, `k600_clean`: Dataframe of summarized K600 estimates and parameters used for calculations,`k600_fit`: Linear model output for the relationship between mean Q and K600 at the site, `k600_expanded`: dataframe of all data used in K600 calculations
-#' @param nbatch Numeric, number of batches for Bayesian chains. Default is 100,000.
+#' @param data Dataframe of metabolism parameter time series, `data` in list output of the @request_NEON function
+#' @param k600_clean Dataframe of summarized K600 estimates and parameters used for K600 calculations, `k600_clean` in list output of the @request_NEON function
+#' @param k600_fit Linear model output for the relationship between mean Q and K600 at the site, `k600_fit` in list output of the @request_NEON function
 #'
 #' @return
 #'
@@ -12,12 +13,7 @@
 #' @examples
 #'
 #' @export
-clean_NEON <-function(data){
-  # Parse out imput data
-  rawData <- data$data
-  k600_data <- data$k600_clean
-  k600_fit <- data$k600_fit
-  
+clean_NEON <-function(data, k600_clean, k600_fit){
   #### Create equal time breaks from start to end of data series ##############
   # Split data into two dataframes broken up by station
   rawData_S1 <- rawData %>% dplyr::filter(horizontalPosition == "S1")
@@ -103,11 +99,11 @@ clean_NEON <-function(data){
   predK600 <- predict.lm(k600_fit, newdata = predVar, interval = "prediction")
   rawData$K600 <- predK600[,"fit"]
   # Convert from 95% confidence interval to SD
-  rawData$K600_sd <- sqrt(length(k600_data$k600)) *
+  rawData$K600_sd <- sqrt(length(k600_clean$k600)) *
     (predK600[,"upr"] - predK600[,"lwr"]) / 3.92
   
   #### Get travel time between stations #######################################
-  traveltime_fit <- lm(travelTime ~ meanQ, data = k600_data)
+  traveltime_fit <- lm(travelTime ~ meanQ, data = k600_clean)
   
   rawData$travelTime_s <- predict.lm(traveltime_fit, newdata = predVar) #CHECK travel time reported in seconds
   
