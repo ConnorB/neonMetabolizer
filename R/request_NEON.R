@@ -27,10 +27,12 @@
 #' @param NEONsites character string specifying 4-letter NEON site code to
 #'   request data from (ex. `"HOPB"`). Can be more than one site
 #'   (ex.`c("HOPB", "BLDE")` but be warned data pull will take longer)
-#' @param startdate YYYY-MM character string defining start year and monthfor
+#' @param startdate YYYY-MM character string defining start year and month for
 #'    data request
 #' @param enddate YYYY-MM character string defining end year and month for
 #'    data request
+#' @param plotPath string containing file path for where to save travel time plots,
+#'    ex. `plotPath = paste0(getwd(), "/data/rawData/reaerationPlots/")`
 #'
 #' @return List of four dataframes, `data`, `k600_clean`, `k600_fit`, and
 #'    `k600_expanded`. NOTE: Explain in detail what these dataframes contain.
@@ -48,7 +50,7 @@
 #' }
 #'
 #' @export
-request_NEON <- function(NEONsites, startdate, enddate){
+request_NEON <- function(NEONsites, startdate, enddate, plotPath){
   #### Input parameters ######################################################
   # Define parameters of interest necessary for metabolism modeling
   params <- c("DP1.20288.001", "DP1.20053.001", "DP1.00024.001",
@@ -140,10 +142,10 @@ request_NEON <- function(NEONsites, startdate, enddate){
                   habitatType, substrate, remarks) %>%
     dplyr::filter(collectDate >=
                     lubridate::ymd_hms(paste0(startdate, "-01 00:00:00"),
-                                       tz = tz(collectDate)) &
+                                       tz = lubridate::tz(collectDate)) &
                     collectDate <=
                     lubridate::ymd_hms(paste0(enddate, "-01 00:00:00"),
-                                       tz = tz(collectDate))) %>%
+                                       tz = lubridate::tz(collectDate))) %>%
     dplyr::group_by(siteID, pointNumber) %>%
     dplyr::arrange(transectDistance, .by_group = TRUE)
 
@@ -253,52 +255,41 @@ request_NEON <- function(NEONsites, startdate, enddate){
                                    dsc_individualFieldData =
                                      FieldDischarge$dsc_individualFieldData,
                                    dsc_fieldDataADCP =
-                                     FieldDischarge$dsc_fieldDataADCP)
+                                     FieldDischarge$dsc_fieldDataADCP,
+                                   waq_instantaneous = WaterQual$waq_instantaneous)
 
-  # Check if reaeration data is only slug injections
-  if(all(Reaeration_data$injectionType %in% c("model","model - slug","model - CRI"))){
-    # If every line of the Reaeration_data is a model injection
-    message(paste0("All reaeration measurements are model injection, therefore did not calculate gas loss rate."))
-    lmk600 <- NA
-    k600_clean <- NA
-    k600_expanded <- Reaeration_data
-  } else {
-    # Feed reaeration data to reaeration calculation tool
-    k600_expanded <-
-      reaRate::def.calc.reaeration(inputFile = Reaeration_data,
-                                   loggerData = Reaeration$rea_conductivityFieldData,
-                                   namedLocation = "namedLocation",
-                                   injectionTypeName = "injectionType",
-                                   eventID = "eventID",
-                                   stationToInjectionDistance = "stationToInjectionDistance",
-                                   plateauGasConc = "plateauGasConc",
-                                   corrPlatSaltConc = "corrPlatSaltConc",
-                                   hoboSampleID = "hoboSampleID",
-                                   discharge = "fieldDischarge",
-                                   waterTemp = "waterTemp",
-                                   wettedWidth = "wettedWidth",
-                                   plot = TRUE,
-                                   savePlotPath = NULL,
-                                   processingInfo = NULL)
+  # Run calculation for SF6 loss rates from raw gas data
+  Reaeration_clean <- reaRate::gas.loss.rate.plot(inputFile = Reaeration_data,
+                                                  savePlotPath = plotPath)
+  # Calculate travel times
+  Reaeration_travelTimes <- reaRate::def.calc.trvl.time(inputFile = Reaeration_clean,
+                                                        loggerData = Reaeration$rea_conductivityFieldData,
+                                                        plot = TRUE)
+  # Calculate k600 based on SF6 loss rates
+  ReaerationRates <- reaRate::def.calc.reaeration(inputFile = Reaeration_travelTimes$outputDF,
+                                                   lossRateSF6 = "slopeClean",
+                                                   outputSuffix = "clean")
+  # Assemble output dataframes
+  reaeration_data <- Reaeration_clean
+  k600_expanded <- Reaeration_travelTimes
+  k600 <- ReaerationRates
 
-    k600 <- k600_expanded$outputDF
-    # Remove K estimates that are less than 0
-    k600_clean <- k600[which(k600$k600 > 0),]
+  # Remove K estimates that are less than 0
+  k600_clean <- k600[which(k600$k600.clean > 0),]
 
-    # Linear model of Q vs K600
-    lmk600 <- lm(k600 ~ meanQ, data = k600_clean)
+  # Linear model of Q vs K600
+  lmk600 <- lm(k600.clean ~ meanQ_cms, data = k600_clean)
 
-    # Plot
-    plot(x = k600_clean$meanQ,y = k600_clean$k600,
-         main = paste0(unique(k600_clean$siteID),
-                       ": Mean Q Against Estimated K600"),
-         xlab = "Mean Q", ylab = "k600")
-    abline(lmk600, lty = 2, col = "red")
-    mtext(paste0("k600 = ", round(summary(lmk600)$coefficients[1], 3), " + ",
-                 round(summary(lmk600)$coefficients[2], 3), " * MeanQ, ",
-                 "R^2 = ", round(summary(lmk600)$r.squared, 3), side = 3),
-          col = "red")
-  }
+  # Plot
+  plot(x = k600_clean$meanQ_cms, y = k600_clean$k600.clean,
+       main = paste0(unique(k600_clean$siteID),
+                     ": Mean Q Against Estimated k600"),
+       xlab = "Mean Q", ylab = "k600")
+  abline(lmk600, lty = 2, col = "red")
+  mtext(paste0("k600 = ", round(summary(lmk600)$coefficients[1], 3), " + ",
+               round(summary(lmk600)$coefficients[2], 3), " * MeanQ, ",
+               "R^2 = ", round(summary(lmk600)$r.squared, 3), side = 3),
+        col = "red")
 
   ################### Output data to user #######################################
   # Remove dataframes from the environment that are generated within the
@@ -313,7 +304,8 @@ request_NEON <- function(NEONsites, startdate, enddate){
                  percentCover = percCover_summary,
                  k600_clean = k600_clean,
                  k600_fit = lmk600,
-                 k600_expanded = k600_expanded)
+                 k600_expanded = k600_expanded,
+                 reaeration_data = reaeration_data)
 
   return(output)
 }
