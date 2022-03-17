@@ -31,8 +31,8 @@
 #'    data request
 #' @param enddate YYYY-MM character string defining end year and month for
 #'    data request
-#' @param plotPath string containing file path for where to save travel time plots,
-#'    ex. `plotPath = paste0(getwd(), "/data/rawData/reaerationPlots/")`
+#' @param reaerationPlotPath string containing file path for where to save travel time plots,
+#'    ex. `reaerationPlotPath = paste0(getwd(), "/data/rawData/reaerationPlots/")`
 #'
 #' @return List of four dataframes, `data`, `k600_clean`, `k600_fit`, and
 #'    `k600_expanded`. NOTE: Explain in detail what these dataframes contain.
@@ -50,7 +50,7 @@
 #' }
 #'
 #' @export
-request_NEON <- function(NEONsites, startdate, enddate, plotPath){
+request_NEON <- function(NEONsites, startdate, enddate, reaerationPlotPath){
   #### Input parameters ######################################################
   # Define parameters of interest necessary for metabolism modeling
   params <- c("DP1.20288.001", "DP1.20053.001", "DP1.00024.001",
@@ -260,7 +260,7 @@ request_NEON <- function(NEONsites, startdate, enddate, plotPath){
 
   # Run calculation for SF6 loss rates from raw gas data
   Reaeration_clean <- reaRate::gas.loss.rate.plot(inputFile = Reaeration_data,
-                                                  savePlotPath = plotPath)
+                                                  savePlotPath = reaerationPlotPath)
   # Calculate travel times
   Reaeration_travelTimes <- reaRate::def.calc.trvl.time(inputFile = Reaeration_clean,
                                                         loggerData = Reaeration$rea_conductivityFieldData,
