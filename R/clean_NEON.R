@@ -105,13 +105,21 @@ clean_NEON <-function(data, k600_clean, k600_fit){
   data <- dplyr::full_join(rawData_S1, rawData_S2)
 
   #### Add K based on lm relationship #########################################
-  predVar <- data.frame(meanQ = data$Discharge_m3s)
-  predK600 <- predict.lm(k600_fit, newdata = predVar, interval = "prediction")
-  data$K600 <- predK600[,"fit"]
+  predVar <- data.frame(meanQ_cms = data$Discharge_m3s)
+  predk600 <- predict.lm(k600_fit, newdata = predVar, interval = "prediction")
+  data$k600 <- predk600[,"fit"]
   # Convert from 95% confidence interval to SD
-  data$K600_sd <- sqrt(length(k600_clean$k600)) *
+  data$k600_sd <- sqrt(length(k600_clean$k600.clean)) *
     (predK600[,"upr"] - predK600[,"lwr"]) / 3.92
-  message("K600 calculated for each sensor timestep based on k600_fit relationship.")
+  message("k600 calculated for each sensor timestep based on k600_fit relationship.")
+
+  #### Add travel time based on lm relationship ################################
+  TT_fit <- lm(peakMaxTravelTime ~ meanQ_cms, data = k600_clean)
+  predTT <- predict.lm(TT_fit, newdata = predVar, interval = "prediction")
+  data$travelTime_s <- predTT[,"fit"]
+  # Convert from 95% confidence interval to SD
+  data$travelTime_sd <- sqrt(length(k600_clean$peakMaxTravelTime)) *
+    (predTT[,"upr"] - predTT[,"lwr"]) / 3.92
 
   #### Use Garcia&Gordon and Benson&Krause to calculate DO saturation % ########
   # Calculating DO % saturation under local conditions using equations from
@@ -182,17 +190,6 @@ clean_NEON <-function(data, k600_clean, k600_fit){
     relocate(c(DOsat_mgL, DOsat_perc), .after = DO_mgL) %>%
     relocate(referenceLongitude, .after = horizontalPosition)
 
-  #### Get travel time between stations #######################################
-  #traveltime_fit <- lm(travelTime ~ meanQ, data = k600_clean)
-
-  #data$travelTime_s <- predict.lm(traveltime_fit, newdata = predVar) #CHECK travel time reported in seconds
-
-  # If k600 is outside the bounds of tracer measurements made at the site (flow rate & k600 is higher than any conditions when measurement was taken)
-  # travel time might be reported as negative, as the best fit line dips below y = 0 axis. Therefore,
-  # If travel time is a negative number, change to 10 seconds - a fast but biologically possible travel time
-  #data <- data %>% dplyr::mutate(travelTime_s = ifelse(travelTime_s <= 0, 10, travelTime_s))
-
   #### Return to user #########################################################
   return(data)
 }
-
