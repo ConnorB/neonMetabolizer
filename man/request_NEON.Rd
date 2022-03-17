@@ -4,18 +4,21 @@
 \alias{request_NEON}
 \title{Request data products from NEON API for two-station metabolism modeling}
 \usage{
-request_NEON(NEONsites, startdate, enddate)
+request_NEON(NEONsites, startdate, enddate, reaerationPlotPath)
 }
 \arguments{
 \item{NEONsites}{character string specifying 4-letter NEON site code to
 request data from (ex. \code{"HOPB"}). Can be more than one site
 (ex.\code{c("HOPB", "BLDE")} but be warned data pull will take longer)}
 
-\item{startdate}{YYYY-MM character string defining start year and monthfor
+\item{startdate}{YYYY-MM character string defining start year and month for
 data request}
 
 \item{enddate}{YYYY-MM character string defining end year and month for
 data request}
+
+\item{reaerationPlotPath}{string containing file path for where to save travel time plots,
+ex. \code{reaerationPlotPath = paste0(getwd(), "/data/rawData/reaerationPlots/")}}
 }
 \value{
 List of four dataframes, \code{data}, \code{k600_clean}, \code{k600_fit}, and
