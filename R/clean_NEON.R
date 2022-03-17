@@ -95,8 +95,10 @@ clean_NEON <-function(data, k600_clean, k600_fit){
 
   # Run the downstream and upstream sites through NA imputation
   # ARIMA is kinda slow, this might take a couple minutes
+  message("Beginning imputation of missing sensor data at site S1. \n   This may take a few minutes.")
   rawData_S1 <- imputeNA_NEON(rawData_S1)
   message("Missing sensor data from site S1 imputed via ARIMA model.")
+  message("Beginning imputation of missing sensor data at site S2. \n   This may take a few minutes.")
   rawData_S2 <- imputeNA_NEON(rawData_S2)
   message("Missing sensor data from site S2 imputed via ARIMA model.")
   # Unite data back into a single dataframe
