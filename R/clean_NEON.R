@@ -32,7 +32,7 @@ clean_NEON <-function(data, k600_clean, k600_fit){
   time <- paste(lubridate::hour(data$solarTime),
                 lubridate::minute(data$solarTime),
                 lubridate::second(data$solarTime), sep = ":")
-  message("Solar time calculated from local time.")
+  message("> Solar time calculated from DateTime_UTC based on referenceLongitude.")
 
   # Convert to chron object
   data$dtime <- chron::chron(dates = as.character(date),
@@ -55,7 +55,9 @@ clean_NEON <-function(data, k600_clean, k600_fit){
     data %>%
     mutate_at(sensCols, ~ifelse(. < 0, NA, .)) %>%
     mutate_at(sensCols, ~ifelse(is.infinite(.), NA, .))
-  message("Obviously erroneous sensor data (readings < 0) eliminated.")
+  message("> Obviously erroneous sensor data (readings < 0) eliminated from: \n   ",
+          paste(sensCols[1:6], collapse = ", "), ",\n   ",
+          paste(sensCols[7:12], collapse = ", "))
 
   #### Create equal time breaks from start to end of data series ##############
   # Split data into two dataframes broken up by station
@@ -98,12 +100,12 @@ clean_NEON <-function(data, k600_clean, k600_fit){
 
   # Run the downstream and upstream sites through NA imputation
   # ARIMA is kinda slow, this might take a couple minutes
-  message("Beginning imputation of missing sensor data at site S1. \n   This may take a few minutes.")
+  message("> Beginning imputation of missing sensor data at site S1. \n   This may take a few minutes.")
   rawData_S1 <- imputeNA_NEON(rawData_S1)
-  message("Missing sensor data from site S1 imputed via ARIMA model.")
-  message("Beginning imputation of missing sensor data at site S2. \n   This may take a few minutes.")
+  message("> Missing sensor data from site S1 imputed via ARIMA model.")
+  message("> Beginning imputation of missing sensor data at site S2. \n   This may take a few minutes.")
   rawData_S2 <- imputeNA_NEON(rawData_S2)
-  message("Missing sensor data from site S2 imputed via ARIMA model.")
+  message("> Missing sensor data from site S2 imputed via ARIMA model.")
   # Unite data back into a single dataframe
   data <- dplyr::full_join(rawData_S1, rawData_S2)
 
@@ -114,7 +116,17 @@ clean_NEON <-function(data, k600_clean, k600_fit){
   # Convert from 95% confidence interval to SD
   data$k600_sd <- sqrt(length(k600_clean$k600.clean)) *
     (predK600[,"upr"] - predK600[,"lwr"]) / 3.92
-  message("k600 calculated for each sensor timestep based on k600_fit relationship.")
+  message("> k600 calculated for each sensor timestep based on k600_fit relationship.")
+
+  modSum <- summary(k600_fit)
+  # Plot fit relationship for k600
+  plot(x = k600_clean$meanQ_cms, y = k600_clean$k600.clean)
+  abline(k600_fit, lty = 2, col = "red")
+  text(x = max(k600_clean$meanQ_cms)*0.8, y = max(k600_clean$k600.clean)*0.8,
+       labels = paste0("R2 = ", format(modSum$adj.r.squared, digits = 3)))
+  text(x = max(k600_clean$meanQ_cms)*0.8, y = max(k600_clean$k600.clean)*0.7,
+       labels = paste0("p = ", format(modSum$coefficients[2,4], digits = 2)))
+
 
   #### Add travel time based on lm relationship ################################
   TT_fit <- lm(peakMaxTravelTime ~ meanQ_cms, data = k600_clean)
@@ -123,6 +135,16 @@ clean_NEON <-function(data, k600_clean, k600_fit){
   # Convert from 95% confidence interval to SD
   data$travelTime_sd <- sqrt(length(k600_clean$peakMaxTravelTime)) *
     (predTT[,"upr"] - predTT[,"lwr"]) / 3.92
+  message("> Travel time between sensor stations calculated for each timestep \n   based on linear relationship between peakMaxTravelTime and meanQ_cms.")
+
+  modSum <- summary(TT_fit)
+  # Plot fit relationship for travel time
+  plot(x = k600_clean$meanQ_cms, y = k600_clean$peakMaxTravelTime)
+  abline(TT_fit, lty = 2, col = "red")
+  text(x = max(k600_clean$meanQ_cms)*0.8, y = max(k600_clean$peakMaxTravelTime)*0.8,
+       labels = paste0("R2 = ", format(modSum$adj.r.squared, digits = 3)))
+  text(x = max(k600_clean$meanQ_cms)*0.8, y = max(k600_clean$peakMaxTravelTime)*0.7,
+       labels = paste0("p = ", format(modSum$coefficients[2,4], digits = 2)))
 
   #### Use Garcia&Gordon and Benson&Krause to calculate DO saturation % ########
   # Calculating DO % saturation under local conditions using equations from
@@ -179,7 +201,7 @@ clean_NEON <-function(data, k600_clean, k600_fit){
   data$DOsat_perc <- (data$DO_mgL / data$DOsat_mgL) * 100
   # Remove localDissolvedOxygenSat column
   data <- select(data, -c(seaLevelDissolvedOxygenSat, localDissolvedOxygenSat))
-  message("O2 saturation (mg/L and %) calculated from DO, air pressure, and temperature \n   using Garcia & Gordon (1992) and Benson & Krause (1984) solubility equations.")
+  message("> O2 saturation (mg/L and %) calculated from DO, air pressure, and temperature \n   using Garcia & Gordon (1992) and Benson & Krause (1984) solubility equations.")
 
   #### Keep only 15-minute dates ###############################################
   # Some sensor measurements are taken on a ~30 sec delay (ex. 12:15:30 at S2
