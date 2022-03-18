@@ -110,6 +110,15 @@ clean_NEON <-function(data, k600_clean, k600_fit){
   data <- dplyr::full_join(rawData_S1, rawData_S2)
 
   #### Add K based on lm relationship #########################################
+  # Check for discharge == 0
+  message("> Discharge (m3 s-1) is equal to 0.00 at ",
+          sum(data$Discharge_m3s <= 0), " datapoints \n   (or ",
+          round(sum(data$Discharge_m3s <= 0)/length(data$Discharge_m3s)*100, digits = 3),
+          "% of datapoints). At these datapoints, \n   discharge has now been set to == 0.0000001 to \n   allow for log transformation.")
+  # Change any datapoints where discharge == 0 to discharge == 0.0000001
+  # This will allow for happy log transformations at the travel time fit step
+  data$Discharge_m3s[data$Discharge_m3s <= 0] <- 0.0000001
+
   predVar <- data.frame(meanQ_cms = data$Discharge_m3s)
   predk600 <- predict.lm(k600_fit, newdata = predVar, interval = "prediction")
   data$k600 <- predk600[,"fit"]
@@ -128,7 +137,6 @@ clean_NEON <-function(data, k600_clean, k600_fit){
        labels = paste0("R2 = ", format(modSum$adj.r.squared, digits = 3)))
   text(x = max(k600_clean$meanQ_cms)*0.8, y = max(k600_clean$k600.clean)*0.7,
        labels = paste0("p = ", format(modSum$coefficients[2,4], digits = 2)))
-
 
   #### Add travel time based on log-lm relationship ############################
   k600_clean$logmeanQ_cms <- log10(k600_clean$meanQ_cms)
