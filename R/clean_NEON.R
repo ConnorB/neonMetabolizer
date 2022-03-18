@@ -17,6 +17,9 @@ clean_NEON <-function(data, k600_clean, k600_fit){
   # Arrange by date
   data <- dplyr::arrange(data, DateTime_UTC)
 
+  # Save copy of raw data, this will be returned to user in output
+  rawData <- data
+
   #### Convert from UTC time to solar time #####################################
   # Convert from UTC to solar time
   data$solarTime <-
@@ -191,5 +194,10 @@ clean_NEON <-function(data, k600_clean, k600_fit){
     relocate(referenceLongitude, .after = horizontalPosition)
 
   #### Return to user #########################################################
-  return(data)
+  outList <- list(cleanData = data,
+                  rawData = rawData,
+                  k600_clean = k600_clean,
+                  k600_fit = k600_fit)
+
+  return(outList)
 }
