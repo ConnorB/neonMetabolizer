@@ -111,16 +111,18 @@ clean_NEON <-function(data, k600_clean, k600_fit){
 
   #### Add K based on lm relationship #########################################
   predVar <- data.frame(meanQ_cms = data$Discharge_m3s)
-  predk600 <- predict.lm(k600_fit, newdata = predVar, interval = "prediction")
+  predk600 <- predict.lm(k600_fit, newdata = predVar$meanQ_cms, interval = "prediction")
   data$k600 <- predk600[,"fit"]
   # Convert from 95% confidence interval to SD
   data$k600_sd <- sqrt(length(k600_clean$k600.clean)) *
-    (predK600[,"upr"] - predK600[,"lwr"]) / 3.92
+    (predk600[,"upr"] - predk600[,"lwr"]) / 3.92
   message("> k600 calculated for each sensor timestep based on k600_fit relationship.")
 
   modSum <- summary(k600_fit)
   # Plot fit relationship for k600
-  plot(x = k600_clean$meanQ_cms, y = k600_clean$k600.clean)
+  plot(x = k600_clean$meanQ_cms, y = k600_clean$k600.clean,
+       main = "Discharge vs k600", xlab = "Discharge (m3 s-1)",
+       ylab = "k600 (d-1)")
   abline(k600_fit, lty = 2, col = "red")
   text(x = max(k600_clean$meanQ_cms)*0.8, y = max(k600_clean$k600.clean)*0.8,
        labels = paste0("R2 = ", format(modSum$adj.r.squared, digits = 3)))
@@ -128,22 +130,26 @@ clean_NEON <-function(data, k600_clean, k600_fit){
        labels = paste0("p = ", format(modSum$coefficients[2,4], digits = 2)))
 
 
-  #### Add travel time based on lm relationship ################################
-  TT_fit <- lm(peakMaxTravelTime ~ meanQ_cms, data = k600_clean)
+  #### Add travel time based on log-lm relationship ############################
+  k600_clean$logmeanQ_cms <- log10(k600_clean$meanQ_cms)
+  predVar <- data.frame(logmeanQ_cms = log10(data$Discharge_m3s))
+  TT_fit <- lm(peakMaxTravelTime ~ logmeanQ_cms, data = k600_clean)
   predTT <- predict.lm(TT_fit, newdata = predVar, interval = "prediction")
   data$travelTime_s <- predTT[,"fit"]
   # Convert from 95% confidence interval to SD
   data$travelTime_sd <- sqrt(length(k600_clean$peakMaxTravelTime)) *
     (predTT[,"upr"] - predTT[,"lwr"]) / 3.92
-  message("> Travel time between sensor stations calculated for each timestep \n   based on linear relationship between peakMaxTravelTime and meanQ_cms.")
+  message("> Travel time between sensor stations calculated for each timestep \n   based on linear relationship between peakMaxTravelTime and Log10(meanQ_cms).")
 
   modSum <- summary(TT_fit)
   # Plot fit relationship for travel time
-  plot(x = k600_clean$meanQ_cms, y = k600_clean$peakMaxTravelTime)
+  plot(x = k600_clean$logmeanQ_cms, y = k600_clean$peakMaxTravelTime,
+       main = "Log(Discharge) vs Travel time", xlab = "Log(Discharge (m3 s-1))",
+       ylab = "Travel time between stations (s)")
   abline(TT_fit, lty = 2, col = "red")
-  text(x = max(k600_clean$meanQ_cms)*0.8, y = max(k600_clean$peakMaxTravelTime)*0.8,
+  text(x = min(k600_clean$logmeanQ_cms)*0.5, y = max(k600_clean$peakMaxTravelTime)*0.8,
        labels = paste0("R2 = ", format(modSum$adj.r.squared, digits = 3)))
-  text(x = max(k600_clean$meanQ_cms)*0.8, y = max(k600_clean$peakMaxTravelTime)*0.7,
+  text(x = min(k600_clean$logmeanQ_cms)*0.5, y = max(k600_clean$peakMaxTravelTime)*0.7,
        labels = paste0("p = ", format(modSum$coefficients[2,4], digits = 2)))
 
   #### Use Garcia&Gordon and Benson&Krause to calculate DO saturation % ########
