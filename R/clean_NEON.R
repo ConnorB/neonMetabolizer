@@ -111,7 +111,7 @@ clean_NEON <-function(data, k600_clean, k600_fit){
 
   #### Add K based on lm relationship #########################################
   predVar <- data.frame(meanQ_cms = data$Discharge_m3s)
-  predk600 <- predict.lm(k600_fit, newdata = predVar$meanQ_cms, interval = "prediction")
+  predk600 <- predict.lm(k600_fit, newdata = predVar, interval = "prediction")
   data$k600 <- predk600[,"fit"]
   # Convert from 95% confidence interval to SD
   data$k600_sd <- sqrt(length(k600_clean$k600.clean)) *
@@ -140,6 +140,15 @@ clean_NEON <-function(data, k600_clean, k600_fit){
   data$travelTime_sd <- sqrt(length(k600_clean$peakMaxTravelTime)) *
     (predTT[,"upr"] - predTT[,"lwr"]) / 3.92
   message("> Travel time between sensor stations calculated for each timestep \n   based on linear relationship between peakMaxTravelTime and Log10(meanQ_cms).")
+  # Depending on the fit of the model, there may be some predicted travel times
+  # that are less than 0. Obviously this is impossible. To fix this, let's
+  # remove less than 0 travel times and replace them with 1 second. This will
+  # allow us to see how many travel times have been replaced, also
+  message("> ", sum(data$travelTime_s <= 0), " predicted travel times (or ",
+          round(sum(data$travelTime_s <= 0)/length(data$travelTime_s)*100,
+                digits = 2),
+          "% of datapoints) were predicted as <= 0 \n   according to the log-linear model. As a travel time of <= 0 is \n   impossible, negative travel times have \n   been changed to travel time == 1 second.")
+  data$travelTime_s[data$travelTime_s <=0] <- 1 # second
 
   modSum <- summary(TT_fit)
   # Plot fit relationship for travel time
