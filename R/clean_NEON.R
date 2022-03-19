@@ -221,7 +221,7 @@ clean_NEON <-function(data, k600_clean, k600_fit){
   # 1 kg H2O = 1 L H2O
   data$DOsat_mgL <- DOsat_uMol.kg * 10^(-6) * 32 * 10^3
   # Calculate percent saturation
-  data$DOsat_perc <- (data$DO_mgL / data$DOsat_mgL) * 100
+  data$DOsat_pct <- (data$DO_mgL / data$DOsat_mgL) * 100
   # Remove localDissolvedOxygenSat column
   data <- select(data, -c(seaLevelDissolvedOxygenSat, localDissolvedOxygenSat))
   message("> O2 saturation (mg/L and %) calculated from DO, air pressure, and temperature \n   using Garcia & Gordon (1992) and Benson & Krause (1984) solubility equations.")
@@ -235,7 +235,7 @@ clean_NEON <-function(data, k600_clean, k600_fit){
   #### Organize dataframe ######################################################
   data <- data %>%
     relocate(c(solarTime, dtime), .after = c(DateTime_UTC)) %>%
-    relocate(c(DOsat_mgL, DOsat_perc), .after = DO_mgL) %>%
+    relocate(c(DOsat_mgL, DOsat_pct), .after = DO_mgL) %>%
     relocate(referenceLongitude, .after = horizontalPosition)
 
   #### Return to user #########################################################

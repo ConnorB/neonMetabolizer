@@ -13,11 +13,15 @@
 #'
 #' @export
 fit_twostation <-function(data, nbatch = 1e5){
+  # Add date column to dataframe based on solar time - this gets passed into
+  # twostationpostsum
+  data$date <- lubridate::date(data$solarTime)
+
   #### Subset data where two station modeling is possible #####################
   # IN FUTURE: experiment with filling short gaps in data
 
   # Split time into chunks of all non-NA DO data or all NA DO data
-  #modelBlocks <- split(rawData, cumsum(c(TRUE, diff(is.na(rawData$DO_mgL)) != 0)))
+  #modelBlocks <- split(data, cumsum(c(TRUE, diff(is.na(data$DO_mgL)) != 0)))
 
   # If model block has no entries, remove from list
  # for (i in seq_along(modelBlocks)) {
@@ -29,7 +33,7 @@ fit_twostation <-function(data, nbatch = 1e5){
   #### Pass each modeling block to modeling functions #########################
   # Initiate empty lists to store all the modeling results in
   i = 1
-  dateList <- unique(rawData$date)
+  dateList <- unique(data$date)
   results_accept <- list(rep(NA, length(dateList)))
   results_metab_date <- list(rep(NA, length(dateList)))
   results_metab_GPP <- list(rep(NA, length(dateList)))
@@ -51,7 +55,7 @@ fit_twostation <-function(data, nbatch = 1e5){
     # Grab date
     modelDate <- dateList[i]
     # Subset data for selected date
-    data_subset <- dplyr::filter(rawData, date == modelDate)
+    data_subset <- dplyr::filter(data, date == modelDate)
 
     # If there is a discharge 0 reading during day, skip day of data, tell user
     # stream is dry or intermittently dry on this day
@@ -105,8 +109,9 @@ fit_twostation <-function(data, nbatch = 1e5){
     depth_m <- mean(data_subset$Depth_m)
 
     #### Get mean and standard deviation of K600 on selected day ############
-    K600_mean <- mean(data_subset$K600)
-    K600_sd <- mean(data_subset$K600_sd)
+    k600_mean <- mean(data_subset$k600)
+    #k600_sd <- mean(data_subset$k600)*0.1 # will this improve fits? giving 0.5% wiggle room
+    k600_sd <- 0.0001
 
     #### Run 2-station metabolism modeling function for selected day ########
     # "Start" denotes the initial state of the markov chain for GPP, ER,
@@ -115,8 +120,8 @@ fit_twostation <-function(data, nbatch = 1e5){
                                    O2data = data_subset,
                                    z = depth_m,
                                    tt = travelTime_days,
-                                   Kmean = K600_mean,
-                                   Ksd = K600_sd,
+                                   Kmean = k600_mean,
+                                   Ksd = k600_sd,
                                    upName = "S1", downName = "S2",
                                    nbatch = nbatch, scale = 0.3)
 
@@ -151,9 +156,9 @@ fit_twostation <-function(data, nbatch = 1e5){
                         ER = unlist(results_metab_ER),
                         ER.lower = unlist(results_metab_ER.lower),
                         ER.upper = unlist(results_metab_ER.upper),
-                        K = unlist(results_metab_K),
-                        K.lower = unlist(results_metab_K.lower),
-                        K.upper = unlist(results_metab_K.upper),
+                        k = unlist(results_metab_K),
+                        k.lower = unlist(results_metab_K.lower),
+                        k.upper = unlist(results_metab_K.upper),
                         s = unlist(results_metab_s),
                         s.lower = unlist(results_metab_s.lower),
                         s.upper = unlist(results_metab_s.upper),
@@ -165,6 +170,6 @@ fit_twostation <-function(data, nbatch = 1e5){
   # Return to user
   return(list(results = results,
               modeledO2 = results_modeledO2,
-              rawData = rawData))
+              data = data))
 }
 

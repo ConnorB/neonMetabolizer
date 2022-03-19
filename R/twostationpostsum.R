@@ -51,7 +51,7 @@ twostationpostsum <- function(O2data, upName, downName, start, z, tt, Kmean, Ksd
     # is the value that is the travel time later than oxy up.  The below calls
     # are designed to work with our data structure.
 
-    if (length(updata$DO_mgL) < lag) {
+      if (length(updata$DO_mgL) < lag) {
       # If there is less data during a day than the lag interval, move to next day
       message("ERROR: model not computed for ", dateList[i], " as insufficient observations provided.")
       break
