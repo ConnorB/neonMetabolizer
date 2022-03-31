@@ -45,9 +45,7 @@ O2TimeSeries <- function(GPP, ER, O2data, Kmean, z, tt, upName, downName) {
   for (i in 1:length(oxyup)) {
     modeledO2[i] <- (oxyup[i] + ((GPP/z)*(sum(light[i:(i+lag)]) / sum(light))) +
                        ER*tt/z +
-                       (Kcor(tempup[i],Kmean))*tt*(osat[i] -
-                                                     oxyup[i] +
-                                                     osat[i])/2) /
+                       (Kcor(tempup[i],Kmean))*tt*(osat[i] - oxyup[i] +  osat[i])/2) /
       (1 + Kcor(tempup[i],Kmean)*tt/2)
   }
 

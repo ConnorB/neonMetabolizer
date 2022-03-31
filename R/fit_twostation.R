@@ -110,13 +110,14 @@ fit_twostation <-function(data, nbatch = 1e5){
 
     #### Get mean and standard deviation of K600 on selected day ############
     k600_mean <- mean(data_subset$k600)
-    #k600_sd <- mean(data_subset$k600)*0.1 # will this improve fits? giving 0.5% wiggle room
-    k600_sd <- 0.0001
+    #k600_sd <- mean(data_subset$k600)*0.1
+    #k600_sd <- mean(data_subset$k600_sd) # will this improve fits? giving 5% wiggle room
+    k600_sd <- 10 # super constrained fit on k
 
     #### Run 2-station metabolism modeling function for selected day ########
     # "Start" denotes the initial state of the markov chain for GPP, ER,
     # K, and s, 'start' is not the same an informative prior
-    metab_out <- twostationpostsum(start = c(10, -10, 7, -2.2),
+    metab_out <- twostationpostsum(start = c(3.1, -7.1, 7, -2.2),
                                    O2data = data_subset,
                                    z = depth_m,
                                    tt = travelTime_days,

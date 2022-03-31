@@ -43,8 +43,8 @@ tspost <- function(MET, tempup, tempdown, oxyup, oxydown, light, tt, z, osat,
   loglik <- sum(dnorm(oxydown, metab, sigma, log=TRUE))
 
   # Priors, note wide distributions for GPP and ER
-  prior <- (dnorm(GPP, mean=10, sd=10, log=TRUE)) +
-    (dnorm(ER, mean=-10, sd=10, log=TRUE)) +
+  prior <- (dnorm(GPP, mean=3.1, sd=6.0, log=TRUE)) +
+    (dnorm(ER, mean=-7.1, sd=7.1, log=TRUE)) +
     #(dnorm(K, mean=Kmean, sd=Ksd, log=TRUE)) +
     (dnorm(K, mean=Kmean, sd=Ksd, log=TRUE))
 
