@@ -122,9 +122,11 @@ clean_NEON <-function(data, k600_clean, k600_fit){
   predVar <- data.frame(meanQ_cms = data$Discharge_m3s)
   predk600 <- predict.lm(k600_fit, newdata = predVar, interval = "prediction")
   data$k600 <- predk600[,"fit"]
-  # Convert from 95% confidence interval to SD
-  data$k600_sd <- sqrt(length(k600_clean$k600.clean)) *
-    (predk600[,"upr"] - predk600[,"lwr"]) / 3.92
+  # Grab 95% confidence interval
+  data$k600_lower <- predk600[,"lwr"]
+  data$k600_upper <- predk600[,"upr"]
+  #data$k600_sd <- sqrt(length(k600_clean$k600.clean)) *
+   # (predk600[,"upr"] - predk600[,"lwr"]) / 3.92 # Convert from 95% confidence interval to SD
   message("> k600 calculated for each sensor timestep based on k600_fit relationship.")
 
   modSum <- summary(k600_fit)
