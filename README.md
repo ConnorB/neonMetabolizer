@@ -1,8 +1,8 @@
-# NEON-metabolizer
-NEON-metabolizer is a repo for R functions that can be used to pull [NEON](http://www.neonscience.org/) data from the API and model two-station stream metabolism. This is _not_ an official NEON package and is _not_ supported or endorsed by NEON.
+# NEONmetabolizer
+NEONmetabolizer is a repo for R functions that can be used to pull [NEON](http://www.neonscience.org/) data from the API and model two-station stream metabolism. This is _not_ an official NEON package and is _not_ supported or endorsed by NEON.
 
 ## Dependencies
-NEON-metabolizer relies on [@NEONScience](https://github.com/NEONScience)'s [`NEON-utilities`](https://github.com/NEONScience/NEON-utilities), [`localPressureDO`](https://github.com/NEONScience/NEON-water-quality/localPressureDO), and [`reaRate`](https://github.com/NEONScience/NEON-reaeration/reaRate). NEON-metabolizer also takes advantage of some functions from [@USGS-R](https://github.com/USGS-R)'s [`streamMetabolizer`](https://github.com/USGS-R/streamMetabolizer) R package. Most of the two-station modeling is based on the [Hall et al. 2016 Supplemental](https://www.doi.org/10.1007/s10021-015-9918-1) code, as implemented in Kelly et al. (in preparation, [.Rmd available here](https://github.com/michelleckelly/KAWN_SensorDataAnalysis_MCK/blob/master/KAWN_Sensors_MetabolismAnalysis.Rmd)).
+NEONmetabolizer relies on [@NEONScience](https://github.com/NEONScience)'s [`NEON-utilities`](https://github.com/NEONScience/NEON-utilities), [`localPressureDO`](https://github.com/NEONScience/NEON-water-quality/localPressureDO), and [`reaRate`](https://github.com/NEONScience/NEON-reaeration/reaRate). NEON-metabolizer also takes advantage of some functions from [@USGS-R](https://github.com/USGS-R)'s [`streamMetabolizer`](https://github.com/USGS-R/streamMetabolizer) R package. Most of the two-station modeling is based on the [Hall et al. 2016 Supplemental](https://www.doi.org/10.1007/s10021-015-9918-1) code, as implemented in [Kelly et al. 2021](https://doi.org/10.1029/2021JG006469).
 
 ## Example workflow
 
