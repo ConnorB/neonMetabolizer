@@ -119,17 +119,9 @@ clean_NEON <-function(data, k600_clean, k600_fit){
   # This will allow for happy log transformations at the travel time fit step
   data$Discharge_m3s[data$Discharge_m3s <= 0] <- 0.0000001
 
-  predVar <- data.frame(meanQ_cms = data$Discharge_m3s)
-  predk600 <- predict.lm(k600_fit, newdata = predVar, interval = "prediction")
-  data$k600 <- predk600[,"fit"]
-  # Grab 95% confidence interval
-  data$k600_lower <- predk600[,"lwr"]
-  data$k600_upper <- predk600[,"upr"]
-  #data$k600_sd <- sqrt(length(k600_clean$k600.clean)) *
-   # (predk600[,"upr"] - predk600[,"lwr"]) / 3.92 # Convert from 95% confidence interval to SD
-  message("> k600 calculated for each sensor timestep based on k600_fit relationship.")
-
+  # Get fit statistics for measured K600 vs Q fit
   modSum <- summary(k600_fit)
+
   # Plot fit relationship for k600
   plot(x = k600_clean$meanQ_cms, y = k600_clean$k600.clean,
        main = "Discharge vs k600", xlab = "Discharge (m3 s-1)",
@@ -139,6 +131,29 @@ clean_NEON <-function(data, k600_clean, k600_fit){
        labels = paste0("R2 = ", format(modSum$adj.r.squared, digits = 3)))
   text(x = max(k600_clean$meanQ_cms)*0.8, y = max(k600_clean$k600.clean)*0.7,
        labels = paste0("p = ", format(modSum$coefficients[2,4], digits = 2)))
+
+  # Check if relationship between K and Q is statistically significant
+  # If it is, add K values to dataframe using linear relationship
+  # If it's not, use mean of measured K for dataframe K values
+  if(modSum$coefficients[2,4] < 0.05){
+    message("> Fit of measured k600 vs. Q (p = ", format(modSum$coefficients[2,4], digits = 2),
+            ") significant. Therefore, k600 was calculated for each sensor timestep based on k600_fit relationship.")
+    # Use measured K600 vs Q fit to predict K600 at each timestep
+    predVar <- data.frame(meanQ_cms = data$Discharge_m3s)
+    predk600 <- predict.lm(k600_fit, newdata = predVar, interval = "prediction")
+    data$k600 <- predk600[,"fit"]
+    # Grab 95% confidence interval
+    data$k600_lower <- predk600[,"lwr"]
+    data$k600_upper <- predk600[,"upr"]
+    #data$k600_sd <- sqrt(length(k600_clean$k600.clean)) *
+    # (predk600[,"upr"] - predk600[,"lwr"]) / 3.92 # Convert from 95% confidence interval to SD
+  } else{
+    message("> Fit of measured k600 vs. Q (p = ", format(modSum$coefficients[2,4], digits = 2),
+            ") insignificant. Therefore, k600 for each sensor timestep set as mean of measured k600 values.")
+    # Set k600 to mean of measured k600 values
+    data$k600 <- mean(k600_clean$k600.clean, na.rm = TRUE)
+    data$k600_sd <- sd(k600_clean$k600.clean, na.rm = TRUE)
+  }
 
   #### Add travel time based on log-lm relationship ############################
   k600_clean$logmeanQ_cms <- log10(k600_clean$meanQ_cms)
