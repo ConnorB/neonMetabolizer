@@ -112,7 +112,7 @@ fit_twostation <-function(data, nbatch = 1e5){
     k600_mean <- mean(data_subset$k600)
     #k600_sd <- mean(data_subset$k600)*0.1
     #k600_sd <- mean(data_subset$k600_sd) # will this improve fits? giving 5% wiggle room
-    k600_sd <- 10 # super constrained fit on k
+    k600_sd <- 5 # super constrained fit on k
 
     #### Run 2-station metabolism modeling function for selected day ########
     # "Start" denotes the initial state of the markov chain for GPP, ER,
