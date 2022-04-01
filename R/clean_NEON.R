@@ -65,7 +65,7 @@ clean_NEON <-function(data, k600_clean, k600_fit){
           "% of datapoints).")
   data <-
     data %>%
-    mutate(DO_mgL = ifelse(. > 300, NA, .))
+    mutate(DO_mgL = case_when(DO_mgL > 300 ~ NA_real_, TRUE ~ DO_mgL))
 
   #### Create equal time breaks from start to end of data series ##############
   # Split data into two dataframes broken up by station
