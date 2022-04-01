@@ -58,6 +58,14 @@ clean_NEON <-function(data, k600_clean, k600_fit){
   message("> Obviously erroneous sensor data (readings < 0) eliminated from: \n   ",
           paste(sensCols[1:6], collapse = ", "), ",\n   ",
           paste(sensCols[7:12], collapse = ", "))
+  # Check for wonky DO data - a few DO_mgL are in the 600 range, eliminate
+  message("> Obviously erroneous DO_mgL (readings > 300) eliminated. This was ",
+          sum(data$DO_mgL <= 0), " datapoints \n   (or ",
+          round(sum(data$DO_mgL <= 0)/length(data$DO_mgL)*100, digits = 3),
+          "% of datapoints).")
+  data <-
+    data %>%
+    mutate_at(DO_mgL, ~ifelse(. > 300, NA, .))
 
   #### Create equal time breaks from start to end of data series ##############
   # Split data into two dataframes broken up by station
@@ -137,7 +145,7 @@ clean_NEON <-function(data, k600_clean, k600_fit){
   # If it's not, use mean of measured K for dataframe K values
   if(modSum$coefficients[2,4] < 0.05){
     message("> Fit of measured k600 vs. Q (p = ", format(modSum$coefficients[2,4], digits = 2),
-            ") significant. Therefore, k600 was calculated for each sensor timestep based on k600_fit relationship.")
+            ") significant. Therefore, k600 was calculated for each sensor timestep\n   based on k600_fit relationship.")
     # Use measured K600 vs Q fit to predict K600 at each timestep
     predVar <- data.frame(meanQ_cms = data$Discharge_m3s)
     predk600 <- predict.lm(k600_fit, newdata = predVar, interval = "prediction")
@@ -149,7 +157,7 @@ clean_NEON <-function(data, k600_clean, k600_fit){
     # (predk600[,"upr"] - predk600[,"lwr"]) / 3.92 # Convert from 95% confidence interval to SD
   } else{
     message("> Fit of measured k600 vs. Q (p = ", format(modSum$coefficients[2,4], digits = 2),
-            ") insignificant. Therefore, k600 for each sensor timestep set as mean of measured k600 values.")
+            ") insignificant. Therefore, k600 for each sensor timestep\n   set as mean of measured k600 values.")
     # Set k600 to mean of measured k600 values
     data$k600 <- mean(k600_clean$k600.clean, na.rm = TRUE)
     data$k600_sd <- sd(k600_clean$k600.clean, na.rm = TRUE)
