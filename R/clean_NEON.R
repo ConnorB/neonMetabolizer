@@ -60,8 +60,8 @@ clean_NEON <-function(data, k600_clean, k600_fit){
           paste(sensCols[7:12], collapse = ", "))
   # Check for wonky DO data - a few DO_mgL are in the 600 range, eliminate
   message("> Obviously erroneous DO_mgL (readings > 300) eliminated. This was ",
-          sum(data$DO_mgL > 300), " datapoints \n   (or ",
-          round(sum(data$DO_mgL > 300)/length(data$DO_mgL)*100, digits = 3),
+          sum(na.omit(data$DO_mgL) > 300), " datapoints \n   (or ",
+          round(sum(na.omit(data$DO_mgL) > 300)/length(data$DO_mgL)*100, digits = 3),
           "% of datapoints).")
   data <-
     data %>%
