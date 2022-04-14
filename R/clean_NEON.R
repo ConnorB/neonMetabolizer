@@ -243,7 +243,7 @@ clean_NEON <-function(data, k600_clean, k600_fit){
 
   #### Organize cleanData ######################################################
   data <- data %>%
-    relocate(c(solarTime, dtime), .after = c(DateTime_UTC)) %>%
+    relocate(c(solarTime), .after = c(DateTime_UTC)) %>%
     relocate(c(DOsat_mgL, DOsat_pct), .after = DO_mgL) %>%
     relocate(referenceLongitude, .after = horizontalPosition)
 
