@@ -254,16 +254,18 @@ clean_NEON <-function(data, k600_clean, k600_fit){
   # Keep only the data necessary for each sampling site
   # From the upstream dataset, we need Oup and Osatup
   Up <- Up %>%
-    distinct(solar.time, .keep_all = TRUE) %>%
-    select(solar.time, DO.obs, DO.sat) %>%
-    rename(DO.obs.up = DO.obs, DO.sat.up = DO.sat)
+    distinct(solarTime, .keep_all = TRUE) %>%
+    select(solarTime, DO_mgL, DOsat_mgL) %>%
+    rename(solar.time = solarTime, DO.obs.up = DO_mgL, DO.sat.up = DOsat_mgL)
   # From the downstream dataset, we need Odown, Osatdown, and all other
   # sensor parameters measured at sensor S2
   Down <- Down %>%
-    distinct(solar.time, .keep_all = TRUE) %>%
-    select(solar.time, DO.obs, DO.sat, depth, temp.water, light,
-           discharge) %>%
-    rename(DO.obs.down = DO.obs, DO.sat.down = DO.sat)
+    distinct(solarTime, .keep_all = TRUE) %>%
+    select(solarTime, DO_mgL, DOsat_mgL, Depth_m, Discharge_m3s, WaterTemp_C, Light_PAR, k600,
+           travelTime_s) %>%
+    rename(solar.time = solarTime, DO.obs.down = DO_mgL, DO.sat.down = DOsat_mgL,
+           depth = Depth_m, discharge = Discharge_m3s, temp.water = WaterTemp_C,
+           light = Light_PAR, tt = travelTime_s)
   # Merge dataframes
   formattedData <- merge(Down, Up, by = "solar.time")
 
