@@ -270,7 +270,7 @@ clean_NEON <-function(data, k600_clean, k600_fit){
   formattedData <- merge(Down, Up, by = "solar.time")
 
   #### Return to user #########################################################
-  outList <- list(formattedData = formatted,
+  outList <- list(formattedData = formattedData,
                   cleanData = data,
                   rawData = rawData,
                   k600_clean = k600_clean,
