@@ -255,19 +255,23 @@ clean_NEON <-function(data, k600_clean, k600_fit){
   # From the upstream dataset, we need Oup and Osatup
   Up <- Up %>%
     distinct(solarTime, .keep_all = TRUE) %>%
-    select(solarTime, DO_mgL, DOsat_mgL) %>%
+    select(DateTime_UTC, solarTime, DO_mgL, DOsat_mgL) %>%
     rename(solar.time = solarTime, DO.obs.up = DO_mgL, DO.sat.up = DOsat_mgL)
   # From the downstream dataset, we need Odown, Osatdown, and all other
   # sensor parameters measured at sensor S2
   Down <- Down %>%
     distinct(solarTime, .keep_all = TRUE) %>%
-    select(solarTime, DO_mgL, DOsat_mgL, Depth_m, Discharge_m3s, WaterTemp_C, Light_PAR, k600,
+    select(DateTime_UTC, solarTime, DO_mgL, DOsat_mgL, Depth_m, Discharge_m3s, WaterTemp_C, Light_PAR, k600,
            travelTime_s) %>%
     rename(solar.time = solarTime, DO.obs.down = DO_mgL, DO.sat.down = DOsat_mgL,
            depth = Depth_m, discharge = Discharge_m3s, temp.water = WaterTemp_C,
            light = Light_PAR, tt = travelTime_s)
   # Merge dataframes
-  formattedData <- merge(Down, Up, by = "solar.time")
+  formattedData <- dplyr::full_join(Down, Up, by = "DateTime_UTC") %>%
+    rename(solar.time = solar.time.x) %>%
+    select(-solar.time.y, -DateTime_UTC) # absolutely no idea why it's not seeing
+    # the solar.time columns as equivalent. Super lazy fix for now, come back
+    #to this later
 
   #### Return to user #########################################################
   outList <- list(formattedData = formattedData,
