@@ -23,21 +23,8 @@ clean_NEON <-function(data, k600_clean, k600_fit){
   #### Convert from UTC time to solar time #####################################
   # Convert from UTC to solar time
   data$solarTime <-
-    streamMetabolizer::convert_UTC_to_solartime(data$DateTime_UTC,
-                                                longitude = data$referenceLongitude)
-
-  #### Convert solar time to chron object ######################################
-  # Convert solarTime column to chron object
-  date <- lubridate::date(data$solarTime)
-  time <- paste(lubridate::hour(data$solarTime),
-                lubridate::minute(data$solarTime),
-                lubridate::second(data$solarTime), sep = ":")
-  message("> Solar time calculated from DateTime_UTC based on referenceLongitude.")
-
-  # Convert to chron object
-  data$dtime <- chron::chron(dates = as.character(date),
-                             times = as.character(time),
-                             format = c(dates = "y-m-d", times = "h:m:s"))
+    suppressWarnings(streamMetabolizer::convert_UTC_to_solartime(data$DateTime_UTC,
+                                              longitude = data$referenceLongitude))
 
   #### Search for obviously erronious sensor data ##############################
   # List of sensor data columns
@@ -169,9 +156,6 @@ clean_NEON <-function(data, k600_clean, k600_fit){
   TT_fit <- lm(peakMaxTravelTime ~ logmeanQ_cms, data = k600_clean)
   predTT <- predict.lm(TT_fit, newdata = predVar, interval = "prediction")
   data$travelTime_s <- predTT[,"fit"]
-  # Convert from 95% confidence interval to SD
-  data$travelTime_sd <- sqrt(length(k600_clean$peakMaxTravelTime)) *
-    (predTT[,"upr"] - predTT[,"lwr"]) / 3.92
   message("> Travel time between sensor stations calculated for each timestep \n   based on linear relationship between peakMaxTravelTime and Log10(meanQ_cms).")
   # Depending on the fit of the model, there may be some predicted travel times
   # that are less than 0. Obviously this is impossible. To fix this, let's
@@ -257,14 +241,35 @@ clean_NEON <-function(data, k600_clean, k600_fit){
   # Keep only the data where the seconds are 0
   data <- data[second(data$DateTime_UTC) == 0,]
 
-  #### Organize dataframe ######################################################
+  #### Organize cleanData ######################################################
   data <- data %>%
     relocate(c(solarTime, dtime), .after = c(DateTime_UTC)) %>%
     relocate(c(DOsat_mgL, DOsat_pct), .after = DO_mgL) %>%
     relocate(referenceLongitude, .after = horizontalPosition)
 
+  #### Format cleanData for metabolism modeling ################################
+  # Seperate upstream and downstream data from the dataframe,
+  Up <- data %>% filter(horizontalPosition == "S1")
+  Down <- data %>% filter(horizontalPosition == "S2")
+  # Keep only the data necessary for each sampling site
+  # From the upstream dataset, we need Oup and Osatup
+  Up <- Up %>%
+    distinct(solar.time, .keep_all = TRUE) %>%
+    select(solar.time, DO.obs, DO.sat) %>%
+    rename(DO.obs.up = DO.obs, DO.sat.up = DO.sat)
+  # From the downstream dataset, we need Odown, Osatdown, and all other
+  # sensor parameters measured at sensor S2
+  Down <- Down %>%
+    distinct(solar.time, .keep_all = TRUE) %>%
+    select(solar.time, DO.obs, DO.sat, depth, temp.water, light,
+           discharge) %>%
+    rename(DO.obs.down = DO.obs, DO.sat.down = DO.sat)
+  # Merge dataframes
+  formattedData <- merge(Down, Up, by = "solar.time")
+
   #### Return to user #########################################################
-  outList <- list(cleanData = data,
+  outList <- list(formattedData = formatted,
+                  cleanData = data,
                   rawData = rawData,
                   k600_clean = k600_clean,
                   k600_fit = k600_fit)
