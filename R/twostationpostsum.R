@@ -13,7 +13,7 @@
 #' nbatch    Number of MCMC trials
 #' scale
 twostationpostsum <- function(O2data, upName, downName, start, z, tt, Kmean, Ksd,
-                              nbatch, scale) {
+                              nbatch, scale, modType) {
   # Create list of unique dates in data
   dateList <- unique(O2data$date)
 
@@ -50,60 +50,102 @@ twostationpostsum <- function(O2data, upName, downName, start, z, tt, Kmean, Ksd
     # trim the ends of the oxy and temp data by the lag so that oxydown[1]
     # is the value that is the travel time later than oxy up.  The below calls
     # are designed to work with our data structure.
-
-      if (length(updata$DO_mgL) < lag) {
+    if (length(updata$DO_mgL) < lag) {
       # If there is less data during a day than the lag interval, move to next day
       message("ERROR: model not computed for ", dateList[i], " as insufficient observations provided.")
       break
-    } else{
-      # Else continue
-      tempup <- updata$WaterTemp_C[1:as.numeric(length(updata$WaterTemp_C)-lag)] # trim the end by the lag
-      oxyup <- updata$DO_mgL[1:as.numeric(length(updata$WaterTemp_C)-lag)]
-      osat <- updata$DOsat_pct[1:as.numeric(length(updata$WaterTemp_C)-lag)]
-      tempdown <- downdata$WaterTemp_C[(1+lag):length(downdata$WaterTemp_C)]
-      oxydown <- downdata$DO_mgL[(1+lag):length(downdata$WaterTemp_C)]
-      light <- downdata$Light_PAR
+      } else{
+        # Else continue
+        tempup <- updata$WaterTemp_C[1:as.numeric(length(updata$WaterTemp_C)-lag)] # trim the end by the lag
+        oxyup <- updata$DO_mgL[1:as.numeric(length(updata$WaterTemp_C)-lag)]
+        osat <- updata$DOsat_mgL[1:as.numeric(length(updata$WaterTemp_C)-lag)]
+        tempdown <- downdata$WaterTemp_C[(1+lag):length(downdata$WaterTemp_C)]
+        oxydown <- downdata$DO_mgL[(1+lag):length(downdata$WaterTemp_C)]
+        light <- downdata$Light_PAR
 
-      # perform MCMC
-      # see documentation on mcmc
-      met.post <- mcmc::metrop(tspost, initial = start, nbatch = nbatch,
-                               scale = scale,tempup = tempup,
-                               tempdown = tempdown, oxyup = oxyup,
-                               osat = osat, oxydown = oxydown,  z = z,
-                               light = light, tt = tt, Kmean = Kmean,
-                               Ksd = Ksd, debug = TRUE)
+        # For MLE modeling
+        if(modType == "mle"){
+          # one method is to use nlm function
+          met.post <- nlm(tspost,
+                          hessian = TRUE, control=list(trace=TRUE, maxit=2000),
+                          p = start, tempup = tempup, tempdown = tempdown,
+                          oxyup = oxyup, osat = osat, oxydown = oxydown, z = z,
+                          light = light, tt = tt, Kmean = Kmean, Ksd = Ksd)
+          # second method is to us optim function
+          #met.post2 <- optim(par = start, tspost, hessian = TRUE,
+           #                  method = "Nelder-Mead", control = list(maxit = 2000),
+            #                 tempup = tempup,
+             #   tempdown = tempdown, oxyup = oxyup,
+              #  osat = osat, oxydown = oxydown,  z = z,
+               # light = light, tt = tt, Kmean = Kmean, Ksd = Ksd)
 
-      # trying to troubleshoot here
-      plot(ts(met.post$batch), main = dateList[i])
+          # Compute standard errors
+          #nlmErr <- sqrt(diag(-met.post[["hessian"]]))
 
+          # 95% confidence intervals will be parameter +- 1.96*std error
+          #solve(met.post$hessian)
 
-      # Calculate overall estimates for each day
-      gppr <- quantile(met.post$batch[(2000:nbatch),1], c(0.025, 0.5, 0.975))
-      err <- quantile(met.post$batch[(2000:nbatch),2], c(0.025, 0.5, 0.975))
-      Kr <- quantile(met.post$batch[(2000:nbatch),3], c(0.025, 0.5, 0.975))
-      sr <- quantile(met.post$batch[(2000:nbatch),4], c(0.025, 0.5, 0.975))
+          GPP[i] <- met.post$estimate[1]
+          #GPP.lower[i] <- met.post$estimate[1] - 1.96*nlmErr[1]
+          GPP.lower[i] <- 1
+          GPP.upper[i] <- 1
+          ER[i] <- met.post$estimate[2]
+          ER.lower[i] <- 1
+          ER.upper[i] <- 1
+          K[i] <- met.post$estimate[3]
+          K.lower[i] <- 1
+          K.upper[i] <- 1
+          s[i] <- met.post$estimate[4]
+          s.lower[i] <- 1
+          s.upper[i] <- 1
+          accept[i] <- met.post$code # See nlm documentation for code information
 
-      # Add results to vectors
-      #date[i] <- ymd(unique(data$date)[i])
-      GPP[i] <- gppr[2]
-      GPP.lower[i] <- gppr[1]
-      GPP.upper[i] <- gppr[3]
-      ER[i] <- err[2]
-      ER.lower[i] <- err[1]
-      ER.upper[i] <- err[3]
-      K[i] <- Kr[2]
-      K.lower[i] <- Kr[1]
-      K.upper[i] <- Kr[3]
-      s[i] <- sr[2]
-      s.lower[i] <- sr[1]
-      s.upper[i] <- sr[3]
-      accept[i] <- met.post$accept # log likelihood plus priors, should be about 0.2
-    }
-    i <- i+1
-  }
-  # Create dataframe of predicted metabolism values
-  pred.metab <- data.frame(date = dateList, GPP, GPP.lower, GPP.upper, ER, ER.lower,
-                           ER.upper, K, K.lower, K.upper, s, s.lower, s.upper)
+          # Create dataframe of predicted metabolism values
+          pred.metab <- data.frame(date = dateList, GPP, GPP.lower, GPP.upper, ER, ER.lower,
+                                   ER.upper, K, K.lower, K.upper, s, s.lower, s.upper, accept)
+        }
+        # For bayesian modeling
+        if(modType == "bayes"){
+          # perform MCMC
+          # see documentation on mcmc
+          met.post <- mcmc::metrop(tspost, initial = start, nbatch = nbatch,
+                                   scale = scale,tempup = tempup,
+                                   tempdown = tempdown, oxyup = oxyup,
+                                   osat = osat, oxydown = oxydown,  z = z,
+                                   light = light, tt = tt, Kmean = Kmean,
+                                   Ksd = Ksd, debug = TRUE)
+
+          # trying to troubleshoot here
+          plot(ts(met.post$batch), main = dateList[i])
+
+          # Calculate overall estimates for each day
+          gppr <- quantile(met.post$batch[(2000:nbatch),1], c(0.025, 0.5, 0.975))
+          err <- quantile(met.post$batch[(2000:nbatch),2], c(0.025, 0.5, 0.975))
+          Kr <- quantile(met.post$batch[(2000:nbatch),3], c(0.025, 0.5, 0.975))
+          sr <- quantile(met.post$batch[(2000:nbatch),4], c(0.025, 0.5, 0.975))
+
+          # Add results to vectors
+          #date[i] <- ymd(unique(data$date)[i])
+          GPP[i] <- gppr[2]
+          GPP.lower[i] <- gppr[1]
+          GPP.upper[i] <- gppr[3]
+          ER[i] <- err[2]
+          ER.lower[i] <- err[1]
+          ER.upper[i] <- err[3]
+          K[i] <- Kr[2]
+          K.lower[i] <- Kr[1]
+          K.upper[i] <- Kr[3]
+          s[i] <- sr[2]
+          s.lower[i] <- sr[1]
+          s.upper[i] <- sr[3]
+          accept[i] <- met.post$accept # log likelihood plus priors, should be about 0.2
+
+          # Create dataframe of predicted metabolism values
+          pred.metab <- data.frame(date = dateList, GPP, GPP.lower, GPP.upper, ER, ER.lower,
+                                   ER.upper, K, K.lower, K.upper, s, s.lower, s.upper)
+          } # close if modType == bayes
+        } # close else length data > lag
+  } # Close looping through each day of datelist NOTE: this may be an unnecessary loop, as only 1 day of data is presented to twostationpostsum at a time
 
   # Call O2TimeSeries function to return modeled O2 values based on median GPP and ER
   # modeling results

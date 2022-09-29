@@ -3,6 +3,7 @@
 #' @importFrom magrittr %>%
 #'
 #' @param data The output from @request_NEON function, a list of 4 objects: `data`: dataframe containing raw site data, `k600_clean`: Dataframe of summarized K600 estimates and parameters used for calculations,`k600_fit`: Linear model output for the relationship between mean Q and K600 at the site, `k600_expanded`: dataframe of all data used in K600 calculations
+#' @param modType Model type as a character string. Either "mle" for maximum likelyhood estimation or "bayes" for Bayesian estimation.
 #' @param nbatch Numeric, number of batches for Bayesian chains. Default is 100,000.
 #'
 #' @return
@@ -12,7 +13,7 @@
 #' @examples
 #'
 #' @export
-fit_twostation <-function(data, nbatch = 1e5){
+fit_twostation <-function(data, modType, nbatch = 1e5){
   # Add date column to dataframe based on solar time - this gets passed into
   # twostationpostsum
   data$date <- lubridate::date(data$solarTime)
@@ -110,14 +111,16 @@ fit_twostation <-function(data, nbatch = 1e5){
 
     #### Get mean and standard deviation of K600 on selected day ############
     k600_mean <- mean(data_subset$k600)
-    #k600_sd <- mean(data_subset$k600)*0.1
+    k600_sd <- mean(data_subset$k600_sd)
+    #k600_sd <- 0.001
     #k600_sd <- mean(data_subset$k600_sd) # will this improve fits? giving 5% wiggle room
-    k600_sd <- 5 # super constrained fit on k
+    #k600_sd <- 5 # super constrained fit on k
 
     #### Run 2-station metabolism modeling function for selected day ########
     # "Start" denotes the initial state of the markov chain for GPP, ER,
     # K, and s, 'start' is not the same an informative prior
     metab_out <- twostationpostsum(start = c(3.1, -7.1, 7, -2.2),
+                                   modType = modType,
                                    O2data = data_subset,
                                    z = depth_m,
                                    tt = travelTime_days,

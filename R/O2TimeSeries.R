@@ -31,7 +31,7 @@ O2TimeSeries <- function(GPP, ER, O2data, Kmean, z, tt, upName, downName) {
 
   oxyup <- updata$DO_mgL[1:as.numeric(length(updata$WaterTemp_C)-lag)]
   # define osat
-  osat <- updata$DOsat_pct[1:as.numeric(length(updata$WaterTemp_C)-lag)]
+  osat <- updata$DOsat_mgL[1:as.numeric(length(updata$WaterTemp_C)-lag)]
   oxydown <- downdata$DO_mgL[(1+lag):length(downdata$WaterTemp_C)]
 
   timeup <- updata$dtime[1:(length(updata$WaterTemp_C)-lag)]
@@ -50,8 +50,8 @@ O2TimeSeries <- function(GPP, ER, O2data, Kmean, z, tt, upName, downName) {
   }
 
   # Convert time from chron to posixct
-  timeup <- as.POSIXlt(timeup)
-  timedown <- as.POSIXlt(timedown)
+  timeup <- as.POSIXlt(timeup, origin = "1970-01-01")
+  timedown <- as.POSIXlt(timedown, origin = "1970-01-01")
 
   oxymodel <- data.frame(timeup, timedown, oxydown, oxyup, modeledO2)
   return(oxymodel)

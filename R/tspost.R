@@ -14,7 +14,7 @@
 #' Ksd
 tspost <- function(MET, tempup, tempdown, oxyup, oxydown, light, tt, z, osat,
                    Kmean, Ksd, ...){
-  # Assign the paramters we solve for to easy to understand values
+  # Assign the parameters we solve for to easy to understand values
   GPP <- MET[1]
   ER <- MET[2]
   K <- MET[3]
@@ -32,13 +32,13 @@ tspost <- function(MET, tempup, tempdown, oxyup, oxydown, light, tt, z, osat,
   for (i in 1:length(oxyup)){
     metab[i] <- (oxyup[i] + ((GPP/z)*(sum(light[i:(i+lag)])/sum(light))) +
                    ER*tt/z +
-                   (Kcor(tempup[i],Kmean))*tt*(osat[i] -
+                   (Kcor(tempup[i],Kmean)) *tt*(osat[i] -
                                                  oxyup[i] +
                                                  osat[i])/2) /
       (1+ Kcor(tempup[i],Kmean)*tt/2)
   }
 
-  # likelhood is below.  dnorm caculates the probablity density of a normal
+  # likelhood is below.  dnorm calculates the probablity density of a normal
   # distribution, note log.
   loglik <- sum(dnorm(oxydown, metab, sigma, log=TRUE))
 
