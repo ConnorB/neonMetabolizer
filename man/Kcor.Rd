@@ -2,14 +2,21 @@
 % Please edit documentation in R/Kcor.R
 \name{Kcor}
 \alias{Kcor}
-\title{Estimate K at temperature, given temperature and
-normalized K600 values. Internal function. See Wanninkhof 1992 and
-Hall et al 2016 supplemental material}
+\title{\code{Kcor} Estimate K, given water temperature and K600 values}
 \usage{
 Kcor(temp, K600)
 }
+\arguments{
+\item{temp}{Water temperature in degrees C}
+
+\item{K600}{Normalized K600 reaeration rate}
+}
+\value{
+Populate here
+}
 \description{
-Estimate K at temperature, given temperature and
-normalized K600 values. Internal function. See Wanninkhof 1992 and
-Hall et al 2016 supplemental material
+Internal function. See Wanninkhof 1992 and Hall et al 2016 supplemental material for more detailed information.
+}
+\references{
+Populate here
 }

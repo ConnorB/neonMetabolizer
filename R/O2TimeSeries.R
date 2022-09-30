@@ -1,15 +1,28 @@
-#' O2TimeSeries FUNCTION: Return modeled oxygen time series from median GPP,
-#' ER estimates. Internal function.
+#' \code{O2TimeSeries} Return modeled oxygen time series from median GPP, ER estimates
 #'
-#' ARGUMENTS:
-#'    GPP
-#'    ER
-#     O2data    Dataframe of cleaned raw two station data (ex. "TS_S1S2")
-#     Kmean
-#     z
-#     tt
-#     upName        Character name of upstream station (ex. "S1")
-#     downName      Character name of downstream station (ex. "S2")
+#' Internal function.
+#'
+#' @param GPP Description
+#' @param ER Description
+#' @param O2data Dataframe of cleaned raw two station data (ex. "TS_S1S2")
+#' @param Kmean Description
+#' @param z Description
+#' @param tt Description
+#' @param upName Description
+#' @param downName Description
+#'
+#' @returns
+#'
+#' Populate here
+#'
+#' @references
+#'
+#' Populate here
+#'
+#' @example
+#'
+#' Populate here
+#'
 O2TimeSeries <- function(GPP, ER, O2data, Kmean, z, tt, upName, downName) {
   # Ungroup O2data
   O2data <- O2data %>% dplyr::ungroup()

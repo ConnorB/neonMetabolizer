@@ -1,17 +1,24 @@
-#' Calculate two station MCMC during one day. Internal function. Function runs
-#' the MCMC and returns posterior distributions
+#' \code{twostationpostsum} Calculate two station MCMC or Bayes during one day.
 #'
-#' O2data    Dataframe containing formatted raw two station data, as
-#'           returned by request_NEON in $data
-#' upName    Character string denoting name of upstream station (ex. "S1")
-#' downName  Character string denoting name of downstream station (ex. "S2")
-#' init      Initial guess for the range of GPP and |ER|
-#' z         Numeric, average depth on day of modeling
-#' tt        Numeric, travel time between stations on day of modeling
-#' Kmean     Mean K for informative prior
-#' Ksd       Standard deviation of K for informative prior
-#' nbatch    Number of MCMC trials
-#' scale
+#' Internal function. Function runs the MCMC and returns posterior distributions
+#'
+#' @param O2data Dataframe containing formatted raw two station data, as returned by request_NEON in $data
+#' @param upName Character string denoting name of upstream station (ex. "S1")
+#' @param downName Character string denoting name of downstream station (ex. "S2")
+#' @param start Description
+#' @param z Numeric, average depth on day of modeling
+#' @param tt Numeric, travel time between stations on day of modeling
+#' @param Kmean Mean K for informative prior
+#' @param Ksd Standard deviation of K for informative prior
+#' @param nbatch Number of MCMC trials
+#' @param scale Description
+#' @param modType Description
+#'
+#' @returns Populate here
+#'
+#' @references Populate here
+#'
+#' @example Populate here
 twostationpostsum <- function(O2data, upName, downName, start, z, tt, Kmean, Ksd,
                               nbatch, scale, modType) {
   # Create list of unique dates in data

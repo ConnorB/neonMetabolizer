@@ -1,7 +1,7 @@
 Package: neonMetabolizer
 Title: Model Two-Station Stream Metabolism from NEON Science Data
-Version: 0.0.0.9000
-Date: 2021-06-01
+Version: 0.0.1
+Date: 2022-09-30
 Authors@R: 
     person("Michelle Catherine", "Kelly", , "mckelly1@mtu.edu", role = c("aut", "cre"))
 Description: What the package does (one paragraph).
@@ -13,10 +13,10 @@ LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
 Imports: devtools,
+    lubridate,
     mcmc,
     chron,
     dplyr,
-    streamMetabolizer,
     neonUtilities,
     reaRate,
     imputeTS,

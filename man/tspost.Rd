@@ -2,34 +2,40 @@
 % Please edit documentation in R/tspost.R
 \name{tspost}
 \alias{tspost}
-\title{tspost FUNCTION: Calculate posterior probablility of model
-This function calculates the posterior probability of the model given
-parameters. Internal function, called within twostationpostsum}
+\title{\code{tspost} Calculate posterior probablility of two-station metabolism model.}
 \usage{
-tspost(
-  MET,
-  tempup,
-  tempdown,
-  oxyup,
-  oxydown,
-  light,
-  tt,
-  z,
-  osat,
-  Kmean,
-  Ksd,
-  ...
-)
+tspost(MET, tempup, tempdown, oxyup, oxydown, light, tt, z, osat, Kmean, Ksd)
+}
+\arguments{
+\item{MET}{Dataframe name of cleaned raw two station data (ex. "TS_S1S2")}
+
+\item{tempup}{Temperature data from upstream station, deg C}
+
+\item{tempdown}{Temperature data from downstream station, deg C}
+
+\item{oxyup}{Oxygen data from upstream station, mg-O2/L}
+
+\item{oxydown}{Oxygen data from downstream station, mg-O2/L}
+
+\item{light}{any light unit}
+
+\item{tt}{travel time, days}
+
+\item{z}{Description}
+
+\item{osat}{Description}
+
+\item{Kmean}{Description}
+
+\item{Ksd}{Description}
+}
+\value{
+Populate here
 }
 \description{
-ARGUMENTS:
-MET          Dataframe name of cleaned raw two station data (ex. "TS_S1S2")
-tempup        Temperature data from upstream station, deg C
-tempdown      Temperature data from downstream station, deg C
-oxyup         Oxygen data from upstream station, mg-O2/L
-oxydown       Oxygen data from downstream station, mg-O2/L
-Light         any light unit
-tt            travel time, days
-Kmean
-Ksd
+This function calculates the posterior probability of the the two station metabolism model given
+parameters. Internal function, called within twostationpostsum
+}
+\references{
+Populate here
 }

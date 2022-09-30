@@ -1,19 +1,33 @@
-#' tspost FUNCTION: Calculate posterior probablility of model
-#' This function calculates the posterior probability of the model given
+#' \code{tspost} Calculate posterior probablility of two-station metabolism model.
+#'
+#' This function calculates the posterior probability of the the two station metabolism model given
 #' parameters. Internal function, called within twostationpostsum
 #'
-#' ARGUMENTS:
-#' MET          Dataframe name of cleaned raw two station data (ex. "TS_S1S2")
-#' tempup        Temperature data from upstream station, deg C
-#' tempdown      Temperature data from downstream station, deg C
-#' oxyup         Oxygen data from upstream station, mg-O2/L
-#' oxydown       Oxygen data from downstream station, mg-O2/L
-#' Light         any light unit
-#' tt            travel time, days
-#' Kmean
-#' Ksd
+#' @param MET Dataframe name of cleaned raw two station data (ex. "TS_S1S2")
+#' @param tempup Temperature data from upstream station, deg C
+#' @param tempdown Temperature data from downstream station, deg C
+#' @param oxyup Oxygen data from upstream station, mg-O2/L
+#' @param oxydown Oxygen data from downstream station, mg-O2/L
+#' @param light any light unit
+#' @param tt travel time, days
+#' @param z Description
+#' @param osat Description
+#' @param Kmean Description
+#' @param Ksd Description
+#'
+#' @returns
+#'
+#' Populate here
+#'
+#' @references
+#'
+#' Populate here
+#'
+#' @example
+#'
+#' Populate here
 tspost <- function(MET, tempup, tempdown, oxyup, oxydown, light, tt, z, osat,
-                   Kmean, Ksd, ...){
+                   Kmean, Ksd){
   # Assign the parameters we solve for to easy to understand values
   GPP <- MET[1]
   ER <- MET[2]
