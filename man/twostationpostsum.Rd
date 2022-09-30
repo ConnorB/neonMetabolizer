@@ -15,7 +15,8 @@ twostationpostsum(
   Kmean,
   Ksd,
   nbatch,
-  scale
+  scale,
+  modType
 )
 }
 \description{
