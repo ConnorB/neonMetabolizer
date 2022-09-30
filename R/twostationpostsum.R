@@ -65,44 +65,68 @@ twostationpostsum <- function(O2data, upName, downName, start, z, tt, Kmean, Ksd
 
         # For MLE modeling
         if(modType == "mle"){
-          # one method is to use nlm function
-          met.post <- nlm(tspost,
-                          hessian = TRUE, control=list(trace=TRUE, maxit=2000),
-                          p = start, tempup = tempup, tempdown = tempdown,
-                          oxyup = oxyup, osat = osat, oxydown = oxydown, z = z,
-                          light = light, tt = tt, Kmean = Kmean, Ksd = Ksd)
-          # second method is to us optim function
-          #met.post2 <- optim(par = start, tspost, hessian = TRUE,
-           #                  method = "Nelder-Mead", control = list(maxit = 2000),
-            #                 tempup = tempup,
-             #   tempdown = tempdown, oxyup = oxyup,
-              #  osat = osat, oxydown = oxydown,  z = z,
-               # light = light, tt = tt, Kmean = Kmean, Ksd = Ksd)
+          # Wrap within trycatch, which will print a descriptive error if nlm fails
+          tryCatch(
+            {
+              # Try to evaluate nlm with data
+              met.post <- nlm(tspost,
+                              hessian = TRUE, control=list(trace=TRUE, maxit=2000),
+                              p = start, tempup = tempup, tempdown = tempdown,
+                              oxyup = oxyup, osat = osat, oxydown = oxydown, z = z,
+                              light = light, tt = tt, Kmean = Kmean, Ksd = Ksd)
 
-          # Compute standard errors
-          #nlmErr <- sqrt(diag(-met.post[["hessian"]]))
+              # Compute standard errors
+              nlmErr <- sqrt(diag(solve(-met.post[["hessian"]])))
+                # If this can't compute - it will return NaN
 
-          # 95% confidence intervals will be parameter +- 1.96*std error
-          #solve(met.post$hessian)
+              # 95% confidence intervals will be parameter +- 1.96*std error
+              GPP[i] <- met.post$estimate[1]
+              GPP.lower[i] <- met.post$estimate[1] - 1.96*nlmErr[1]
+              GPP.upper[i] <- met.post$estimate[1] + 1.96*nlmErr[1]
+              ER[i] <- met.post$estimate[2]
+              ER.lower[i] <- met.post$estimate[2] - 1.96*nlmErr[2]
+              ER.upper[i] <- met.post$estimate[2] + 1.96*nlmErr[2]
+              K[i] <- met.post$estimate[3]
+              K.lower[i] <- met.post$estimate[3] - 1.96*nlmErr[3]
+              K.upper[i] <- met.post$estimate[3] + 1.96*nlmErr[3]
+              s[i] <- met.post$estimate[4]
+              s.lower[i] <- met.post$estimate[4] - 1.96*nlmErr[4]
+              s.upper[i] <- met.post$estimate[4] - 1.96*nlmErr[4]
+              accept[i] <- met.post$code # See nlm documentation for code information
+            },
+            error = function(err){
+              # If nlm returns an error, print this error message to user
+              message(paste("ERROR: Non-finite estimate supplied by `nlm`. Modeling on date",
+                      dateList[i], "failed."))
 
-          GPP[i] <- met.post$estimate[1]
-          #GPP.lower[i] <- met.post$estimate[1] - 1.96*nlmErr[1]
-          GPP.lower[i] <- 1
-          GPP.upper[i] <- 1
-          ER[i] <- met.post$estimate[2]
-          ER.lower[i] <- 1
-          ER.upper[i] <- 1
-          K[i] <- met.post$estimate[3]
-          K.lower[i] <- 1
-          K.upper[i] <- 1
-          s[i] <- met.post$estimate[4]
-          s.lower[i] <- 1
-          s.upper[i] <- 1
-          accept[i] <- met.post$code # See nlm documentation for code information
-
-          # Create dataframe of predicted metabolism values
-          pred.metab <- data.frame(date = dateList, GPP, GPP.lower, GPP.upper, ER, ER.lower,
-                                   ER.upper, K, K.lower, K.upper, s, s.lower, s.upper, accept)
+              # Add NA values to dataframe
+              GPP[i] <- NA
+              GPP.lower[i] <- NA
+              GPP.upper[i] <- NA
+              ER[i] <- NA
+              ER.lower[i] <- NA
+              ER.upper[i] <- NA
+              K[i] <- NA
+              K.lower[i] <- NA
+              K.upper[i] <- NA
+              s[i] <- NA
+              s.lower[i] <- NA
+              s.upper[i] <- NA
+              accept[i] <- "Model failure, non-finite estimate supplied by `nlm`."
+            }, # Close error argument
+            warning = function(warn){
+              # If nlm returns a warning, print this error message to user
+              message(paste0("WARNING: NA/Inf replaced by maximum positive value \n\tduring one or more timesteps on ",
+                             dateList[i], "."))
+            }, #Close warning argument
+            finally = {
+              # Add data to dataframe of predicted metabolism values
+              pred.metab <- data.frame(date = dateList, GPP, GPP.lower,
+                                       GPP.upper, ER, ER.lower, ER.upper, K,
+                                       K.lower, K.upper, s, s.lower, s.upper,
+                                       accept)
+            } # Close finally argument
+          ) # Close tryCatch
         }
         # For bayesian modeling
         if(modType == "bayes"){
