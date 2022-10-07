@@ -140,8 +140,8 @@ clean_NEON <-function(data, k600_clean, k600_fit){
     # Grab 95% confidence interval
     data$k600_lower <- predk600[,"lwr"]
     data$k600_upper <- predk600[,"upr"]
-    #data$k600_sd <- sqrt(length(k600_clean$k600.clean)) *
-    # (predk600[,"upr"] - predk600[,"lwr"]) / 3.92 # Convert from 95% confidence interval to SD
+    data$k600_sd <- ((predk600[,"upr"] - predk600[,"lwr"]) / 3.92) *
+      sqrt(length(k600_clean$k600.clean)) # Convert from 95% confidence interval to SD
   } else{
     message("> Fit of measured k600 vs. Q (p = ", format(modSum$coefficients[2,4], digits = 2),
             ") insignificant. Therefore, k600 for each sensor timestep\n   set as mean of measured k600 values.")
