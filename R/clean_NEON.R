@@ -23,8 +23,8 @@ clean_NEON <-function(data, k600_clean, k600_fit){
   #### Convert from UTC time to solar time #####################################
   # Convert from UTC to solar time
   data$solarTime <-
-    suppressWarnings(streamMetabolizer::convert_UTC_to_solartime(data$DateTime_UTC,
-                                              longitude = data$referenceLongitude))
+    convert_UTC_to_solartime(data$DateTime_UTC,
+                             longitude = data$referenceLongitude)
 
   #### Search for obviously erronious sensor data ##############################
   # List of sensor data columns

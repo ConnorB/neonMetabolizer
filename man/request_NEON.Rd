@@ -30,9 +30,7 @@ water temperature, PAR, discharge, depth, and water quality data for the
 time period and monitoring station(s) of interest (using NEONScience's
 \code{neonUtilities::loadByProduct}). DO
 percent saturation is corrected for local elevation
-using NEONScience's \code{localPressureDO::calcBK_eq},
-and local time is converted to solar time using
-\code{streamMetabolizer::convert_UTC_to_solartime}).
+using NEONScience's \code{localPressureDO::calcBK_eq}.
 }
 \details{
 \code{request_NEON} additionally requests salt and conductivity slug data

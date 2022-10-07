@@ -13,15 +13,6 @@ fit_twostation(data, modType, nbatch = 1e+05)
 
 \item{nbatch}{Numeric, number of batches for Bayesian chains. Default is 100,000.}
 }
-\value{
-
-}
 \description{
 Model two-station stream metabolism
-}
-\examples{
-
-}
-\seealso{
-
 }

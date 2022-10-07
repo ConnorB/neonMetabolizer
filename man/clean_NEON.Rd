@@ -13,15 +13,6 @@ clean_NEON(data, k600_clean, k600_fit)
 
 \item{k600_fit}{Linear model output for the relationship between mean Q and K600 at the site, \code{k600_fit} in list output of the @request_NEON function}
 }
-\value{
-
-}
 \description{
 Clean NEON metabolism parameter data and prep for two-station stream metabolism modeling
-}
-\examples{
-
-}
-\seealso{
-
 }

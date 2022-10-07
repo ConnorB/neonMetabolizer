@@ -5,9 +5,7 @@
 #'   time period and monitoring station(s) of interest (using NEONScience's
 #'   \code{neonUtilities::loadByProduct}). DO
 #'   percent saturation is corrected for local elevation
-#'   using NEONScience's \code{localPressureDO::calcBK_eq},
-#'   and local time is converted to solar time using
-#'   \code{streamMetabolizer::convert_UTC_to_solartime}).
+#'   using NEONScience's \code{localPressureDO::calcBK_eq}.
 #'
 #'   \code{request_NEON} additionally requests salt and conductivity slug data
 #'   necessary for reaeration rate (K) calculations, and displays an
