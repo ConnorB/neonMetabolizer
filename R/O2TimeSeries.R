@@ -47,8 +47,8 @@ O2TimeSeries <- function(GPP, ER, O2data, Kmean, z, tt, upName, downName) {
   osat <- updata$DOsat_mgL[1:as.numeric(length(updata$WaterTemp_C)-lag)]
   oxydown <- downdata$DO_mgL[(1+lag):length(downdata$WaterTemp_C)]
 
-  timeup <- updata$dtime[1:(length(updata$WaterTemp_C)-lag)]
-  timedown <- downdata$dtime[(1+lag):length(downdata$WaterTemp_C)]
+  timeup <- updata$solarTime[1:(length(updata$WaterTemp_C)-lag)]
+  timedown <- downdata$solarTime[(1+lag):length(downdata$WaterTemp_C)]
 
   light <- downdata$Light_PAR
 
@@ -66,6 +66,7 @@ O2TimeSeries <- function(GPP, ER, O2data, Kmean, z, tt, upName, downName) {
   timeup <- as.POSIXlt(timeup, origin = "1970-01-01")
   timedown <- as.POSIXlt(timedown, origin = "1970-01-01")
 
-  oxymodel <- data.frame(timeup, timedown, oxydown, oxyup, modeledO2)
+  oxymodel <- data.frame(timeup, timedown,
+                         oxydown, oxyup, modeledO2)
   return(oxymodel)
 }
