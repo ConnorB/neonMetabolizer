@@ -166,7 +166,14 @@ clean_NEON <-function(data, k600_clean, k600_fit){
                 digits = 2),
           "% of datapoints) were predicted as <= 0 \n   according to the log-linear model. As a travel time of <= 0 is \n   impossible, negative travel times have \n   been changed to travel time == 1 second.")
   data$travelTime_s[data$travelTime_s <=0] <- 1 # second
-
+  # Find travel times that are unlikely to be physically possible, such as
+  # travel time > 1 day (86400 s). These estimates likely come from periods
+  # where the streambed is dry, and flow is super low.
+  message("> ", sum(data$travelTime_s >= 86400), " predicted travel times (or ",
+          round(sum(data$travelTime_s >= 86400)/length(data$travelTime_s)*100,
+                digits = 2),
+          "% of datapoints) were predicted as \n   greater than 1 day. These estimates likely come from periods when the \n   flow is low or stagnant. Travel times exceeding 1 day (86400 sec) \n   have been changed to 0.9 days (77760 sec), so that two-station \n   modeling can be attempted for this day of data.")
+  data$travelTime_s[data$travelTime_s >= 86400] <- 77760 # seconds, == 0.9 days
   modSum <- summary(TT_fit)
   # Plot fit relationship for travel time
   plot(x = k600_clean$logmeanQ_cms, y = k600_clean$peakMaxTravelTime,
