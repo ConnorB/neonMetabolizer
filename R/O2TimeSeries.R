@@ -56,10 +56,16 @@ O2TimeSeries <- function(GPP, ER, O2data, Kmean, z, tt, upName, downName) {
   modeledO2 <- numeric(length(oxyup))
   # Calculate metabolism at each timestep
   for (i in 1:length(oxyup)) {
-    modeledO2[i] <- (oxyup[i] + ((GPP/z)*(sum(light[i:(i+lag)]) / sum(light))) +
-                       ER*tt/z +
-                       (Kcor(tempup[i],Kmean))*tt*(osat[i] - oxyup[i] +  osat[i])/2) /
-      (1 + Kcor(tempup[i],Kmean)*tt/2)
+    # Check if non-NA data on date, if GPP is NA, go to next date in sequence
+    if(is.na(GPP)){
+      # If there is no GPP estimate, move on to next row in dataframe
+      next
+    } else{
+      modeledO2[i] <- (oxyup[i] + ((GPP/z)*(sum(light[i:(i+lag)]) / sum(light))) +
+                         ER*tt/z +
+                         (Kcor(tempup[i],Kmean))*tt*(osat[i] - oxyup[i] +  osat[i])/2) /
+        (1 + Kcor(tempup[i],Kmean)*tt/2)
+    } # close else
   }
 
   # Convert time from chron to posixct

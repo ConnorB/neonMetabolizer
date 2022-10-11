@@ -60,7 +60,21 @@ twostationpostsum <- function(O2data, upName, downName, start, z, tt, Kmean, Ksd
     if (length(updata$DO_mgL) < lag) {
       # If there is less data during a day than the lag interval, move to next day
       message("ERROR: model not computed for ", dateList[i], " as insufficient observations provided.")
-      break
+      # Add NA values to dataframe
+      GPP[i] <- NA
+      GPP.lower[i] <- NA
+      GPP.upper[i] <- NA
+      ER[i] <- NA
+      ER.lower[i] <- NA
+      ER.upper[i] <- NA
+      K[i] <- NA
+      K.lower[i] <- NA
+      K.upper[i] <- NA
+      s[i] <- NA
+      s.lower[i] <- NA
+      s.upper[i] <- NA
+      accept[i] <- NA
+      next
       } else{
         # Else continue
         tempup <- updata$WaterTemp_C[1:as.numeric(length(updata$WaterTemp_C)-lag)] # trim the end by the lag
