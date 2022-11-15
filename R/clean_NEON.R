@@ -50,9 +50,15 @@ clean_NEON <-function(data, k600_clean, k600_fit){
           sum(na.omit(data$DO_mgL) > 300), " datapoints \n   (or ",
           round(sum(na.omit(data$DO_mgL) > 300)/length(data$DO_mgL)*100, digits = 3),
           "% of datapoints).")
+  # Check for wonky water temperature data
+  message("> Obviously erroneous WaterTemp_C (readings > 200 C) eliminated. This was ",
+          sum(na.omit(data$WaterTemp_C) > 200), " datapoints \n   (or ",
+          round(sum(na.omit(data$WaterTemp_C) > 200)/length(data$WaterTemp_C)*100, digits = 3),
+          "% of datapoints).")
   data <-
     data %>%
-    mutate(DO_mgL = case_when(DO_mgL > 300 ~ NA_real_, TRUE ~ DO_mgL))
+    mutate(DO_mgL = case_when(DO_mgL > 300 ~ NA_real_, TRUE ~ DO_mgL),
+           WaterTemp_C = case_when(WaterTemp_C > 200 ~ NA_real_, TRUE ~ WaterTemp_C))
 
   #### Create equal time breaks from start to end of data series ##############
   # Split data into two dataframes broken up by station
