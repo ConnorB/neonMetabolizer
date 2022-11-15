@@ -117,6 +117,11 @@ clean_NEON <-function(data, k600_clean, k600_fit){
   # Check whether k600 data was available from NEON:
   if(is.na(k600_clean)){
     message("> Reaeration measurements (K600) were not available at this site.")
+    data$k600 <- NA
+    data$k600_lower <- NA
+    data$k600_upper <- NA
+    data$k600_sd <- NA
+    data$travelTime_s <- NA
   } else{
 
     # Get fit statistics for measured K600 vs Q fit
@@ -190,7 +195,6 @@ clean_NEON <-function(data, k600_clean, k600_fit){
     text(x = min(k600_clean$logmeanQ_cms)*0.5, y = max(k600_clean$peakMaxTravelTime)*0.7,
          labels = paste0("p = ", format(modSum$coefficients[2,4], digits = 2)))
   } # Close else k600 available from neon
-
 
   #### Use Garcia&Gordon and Benson&Krause to calculate DO saturation % ########
   # Calculating DO % saturation under local conditions using equations from
@@ -275,8 +279,8 @@ clean_NEON <-function(data, k600_clean, k600_fit){
   # sensor parameters measured at sensor S2
   Down <- Down %>%
     distinct(solarTime, .keep_all = TRUE) %>%
-    select(DateTime_UTC, solarTime, DO_mgL, DOsat_mgL, Depth_m, Discharge_m3s, WaterTemp_C, Light_PAR, k600,
-           travelTime_s) %>%
+    select(DateTime_UTC, solarTime, DO_mgL, DOsat_mgL, Depth_m, Discharge_m3s,
+           WaterTemp_C, Light_PAR, k600, travelTime_s) %>%
     rename(solar.time = solarTime, DO.obs.down = DO_mgL, DO.sat.down = DOsat_mgL,
            depth = Depth_m, discharge = Discharge_m3s, temp.water = WaterTemp_C,
            light = Light_PAR, tt = travelTime_s)
