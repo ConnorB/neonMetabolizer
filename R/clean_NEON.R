@@ -121,7 +121,7 @@ clean_NEON <-function(data, k600_clean, k600_fit){
   data$Discharge_m3s[data$Discharge_m3s <= 0] <- 0.0000001
 
   # Check whether k600 data was available from NEON:
-  if(is.na(k600_clean)){
+  if(length(k600_clean) == 1){ # k600_clean will have 1 entry (NA) if no k600 data
     message("> Reaeration measurements (K600) were not available at this site.")
     data$k600 <- NA
     data$k600_lower <- NA
