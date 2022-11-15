@@ -114,76 +114,83 @@ clean_NEON <-function(data, k600_clean, k600_fit){
   # This will allow for happy log transformations at the travel time fit step
   data$Discharge_m3s[data$Discharge_m3s <= 0] <- 0.0000001
 
-  # Get fit statistics for measured K600 vs Q fit
-  modSum <- summary(k600_fit)
-
-  # Plot fit relationship for k600
-  plot(x = k600_clean$meanQ_cms, y = k600_clean$k600.clean,
-       main = "Discharge vs k600", xlab = "Discharge (m3 s-1)",
-       ylab = "k600 (d-1)")
-  abline(k600_fit, lty = 2, col = "red")
-  text(x = max(k600_clean$meanQ_cms)*0.8, y = max(k600_clean$k600.clean)*0.8,
-       labels = paste0("R2 = ", format(modSum$adj.r.squared, digits = 3)))
-  text(x = max(k600_clean$meanQ_cms)*0.8, y = max(k600_clean$k600.clean)*0.7,
-       labels = paste0("p = ", format(modSum$coefficients[2,4], digits = 2)))
-
-  # Check if relationship between K and Q is statistically significant
-  # If it is, add K values to dataframe using linear relationship
-  # If it's not, use mean of measured K for dataframe K values
-  if(modSum$coefficients[2,4] < 0.05){
-    message("> Fit of measured k600 vs. Q (p = ", format(modSum$coefficients[2,4], digits = 2),
-            ") significant. Therefore, k600 was calculated for each sensor timestep\n   based on k600_fit relationship.")
-    # Use measured K600 vs Q fit to predict K600 at each timestep
-    predVar <- data.frame(meanQ_cms = data$Discharge_m3s)
-    predk600 <- predict.lm(k600_fit, newdata = predVar, interval = "prediction")
-    data$k600 <- predk600[,"fit"]
-    # Grab 95% confidence interval
-    data$k600_lower <- predk600[,"lwr"]
-    data$k600_upper <- predk600[,"upr"]
-    data$k600_sd <- ((predk600[,"upr"] - predk600[,"lwr"]) / 3.92) *
-      sqrt(length(k600_clean$k600.clean)) # Convert from 95% confidence interval to SD
+  # Check whether k600 data was available from NEON:
+  if(is.na(k600_clean)){
+    message("> Reaeration measurements (K600) were not available at this site.")
   } else{
-    message("> Fit of measured k600 vs. Q (p = ", format(modSum$coefficients[2,4], digits = 2),
-            ") insignificant. Therefore, k600 for each sensor timestep\n   set as mean of measured k600 values.")
-    # Set k600 to mean of measured k600 values
-    data$k600 <- mean(k600_clean$k600.clean, na.rm = TRUE)
-    data$k600_sd <- sd(k600_clean$k600.clean, na.rm = TRUE)
-  }
 
-  #### Add travel time based on log-lm relationship ############################
-  k600_clean$logmeanQ_cms <- log10(k600_clean$meanQ_cms)
-  predVar <- data.frame(logmeanQ_cms = log10(data$Discharge_m3s))
-  TT_fit <- lm(peakMaxTravelTime ~ logmeanQ_cms, data = k600_clean)
-  predTT <- predict.lm(TT_fit, newdata = predVar, interval = "prediction")
-  data$travelTime_s <- predTT[,"fit"]
-  message("> Travel time between sensor stations calculated for each timestep \n   based on linear relationship between peakMaxTravelTime and Log10(meanQ_cms).")
-  # Depending on the fit of the model, there may be some predicted travel times
-  # that are less than 0. Obviously this is impossible. To fix this, let's
-  # remove less than 0 travel times and replace them with 1 second. This will
-  # allow us to see how many travel times have been replaced, also
-  message("> ", sum(data$travelTime_s <= 0), " predicted travel times (or ",
-          round(sum(data$travelTime_s <= 0)/length(data$travelTime_s)*100,
-                digits = 2),
-          "% of datapoints) were predicted as <= 0 \n   according to the log-linear model. As a travel time of <= 0 is \n   impossible, negative travel times have \n   been changed to travel time == 1 second.")
-  data$travelTime_s[data$travelTime_s <=0] <- 1 # second
-  # Find travel times that are unlikely to be physically possible, such as
-  # travel time > 1 day (86400 s). These estimates likely come from periods
-  # where the streambed is dry, and flow is super low.
-  message("> ", sum(data$travelTime_s >= 86400), " predicted travel times (or ",
-          round(sum(data$travelTime_s >= 86400)/length(data$travelTime_s)*100,
-                digits = 2),
-          "% of datapoints) were predicted as \n   greater than 1 day. These estimates likely come from periods when the \n   flow is low or stagnant. Travel times exceeding 1 day (86400 sec) \n   have been changed to 0.9 days (77760 sec), so that two-station \n   modeling can be attempted for this day of data.")
-  data$travelTime_s[data$travelTime_s >= 86400] <- 77760 # seconds, == 0.9 days
-  modSum <- summary(TT_fit)
-  # Plot fit relationship for travel time
-  plot(x = k600_clean$logmeanQ_cms, y = k600_clean$peakMaxTravelTime,
-       main = "Log(Discharge) vs Travel time", xlab = "Log(Discharge (m3 s-1))",
-       ylab = "Travel time between stations (s)")
-  abline(TT_fit, lty = 2, col = "red")
-  text(x = min(k600_clean$logmeanQ_cms)*0.5, y = max(k600_clean$peakMaxTravelTime)*0.8,
-       labels = paste0("R2 = ", format(modSum$adj.r.squared, digits = 3)))
-  text(x = min(k600_clean$logmeanQ_cms)*0.5, y = max(k600_clean$peakMaxTravelTime)*0.7,
-       labels = paste0("p = ", format(modSum$coefficients[2,4], digits = 2)))
+    # Get fit statistics for measured K600 vs Q fit
+    modSum <- summary(k600_fit)
+
+    # Plot fit relationship for k600
+    plot(x = k600_clean$meanQ_cms, y = k600_clean$k600.clean,
+         main = "Discharge vs k600", xlab = "Discharge (m3 s-1)",
+         ylab = "k600 (d-1)")
+    abline(k600_fit, lty = 2, col = "red")
+    text(x = max(k600_clean$meanQ_cms)*0.8, y = max(k600_clean$k600.clean)*0.8,
+         labels = paste0("R2 = ", format(modSum$adj.r.squared, digits = 3)))
+    text(x = max(k600_clean$meanQ_cms)*0.8, y = max(k600_clean$k600.clean)*0.7,
+         labels = paste0("p = ", format(modSum$coefficients[2,4], digits = 2)))
+
+    # Check if relationship between K and Q is statistically significant
+    # If it is, add K values to dataframe using linear relationship
+    # If it's not, use mean of measured K for dataframe K values
+    if(modSum$coefficients[2,4] < 0.05){
+      message("> Fit of measured k600 vs. Q (p = ", format(modSum$coefficients[2,4], digits = 2),
+              ") significant. Therefore, k600 was calculated for each sensor timestep\n   based on k600_fit relationship.")
+      # Use measured K600 vs Q fit to predict K600 at each timestep
+      predVar <- data.frame(meanQ_cms = data$Discharge_m3s)
+      predk600 <- predict.lm(k600_fit, newdata = predVar, interval = "prediction")
+      data$k600 <- predk600[,"fit"]
+      # Grab 95% confidence interval
+      data$k600_lower <- predk600[,"lwr"]
+      data$k600_upper <- predk600[,"upr"]
+      data$k600_sd <- ((predk600[,"upr"] - predk600[,"lwr"]) / 3.92) *
+        sqrt(length(k600_clean$k600.clean)) # Convert from 95% confidence interval to SD
+      } else{
+        message("> Fit of measured k600 vs. Q (p = ", format(modSum$coefficients[2,4], digits = 2),
+                ") insignificant. Therefore, k600 for each sensor timestep\n   set as mean of measured k600 values.")
+        # Set k600 to mean of measured k600 values
+        data$k600 <- mean(k600_clean$k600.clean, na.rm = TRUE)
+        data$k600_sd <- sd(k600_clean$k600.clean, na.rm = TRUE)
+      }
+
+    #### Add travel time based on log-lm relationship ############################
+    k600_clean$logmeanQ_cms <- log10(k600_clean$meanQ_cms)
+    predVar <- data.frame(logmeanQ_cms = log10(data$Discharge_m3s))
+    TT_fit <- lm(peakMaxTravelTime ~ logmeanQ_cms, data = k600_clean)
+    predTT <- predict.lm(TT_fit, newdata = predVar, interval = "prediction")
+    data$travelTime_s <- predTT[,"fit"]
+    message("> Travel time between sensor stations calculated for each timestep \n   based on linear relationship between peakMaxTravelTime and Log10(meanQ_cms).")
+    # Depending on the fit of the model, there may be some predicted travel times
+    # that are less than 0. Obviously this is impossible. To fix this, let's
+    # remove less than 0 travel times and replace them with 1 second. This will
+    # allow us to see how many travel times have been replaced, also
+    message("> ", sum(data$travelTime_s <= 0), " predicted travel times (or ",
+            round(sum(data$travelTime_s <= 0)/length(data$travelTime_s)*100,
+                  digits = 2),
+            "% of datapoints) were predicted as <= 0 \n   according to the log-linear model. As a travel time of <= 0 is \n   impossible, negative travel times have \n   been changed to travel time == 1 second.")
+    data$travelTime_s[data$travelTime_s <=0] <- 1 # second
+    # Find travel times that are unlikely to be physically possible, such as
+    # travel time > 1 day (86400 s). These estimates likely come from periods
+    # where the streambed is dry, and flow is super low.
+    message("> ", sum(data$travelTime_s >= 86400), " predicted travel times (or ",
+            round(sum(data$travelTime_s >= 86400)/length(data$travelTime_s)*100,
+                  digits = 2),
+            "% of datapoints) were predicted as \n   greater than 1 day. These estimates likely come from periods when the \n   flow is low or stagnant. Travel times exceeding 1 day (86400 sec) \n   have been changed to 0.9 days (77760 sec), so that two-station \n   modeling can be attempted for this day of data.")
+    data$travelTime_s[data$travelTime_s >= 86400] <- 77760 # seconds, == 0.9 days
+    modSum <- summary(TT_fit)
+    # Plot fit relationship for travel time
+    plot(x = k600_clean$logmeanQ_cms, y = k600_clean$peakMaxTravelTime,
+         main = "Log(Discharge) vs Travel time", xlab = "Log(Discharge (m3 s-1))",
+         ylab = "Travel time between stations (s)")
+    abline(TT_fit, lty = 2, col = "red")
+    text(x = min(k600_clean$logmeanQ_cms)*0.5, y = max(k600_clean$peakMaxTravelTime)*0.8,
+         labels = paste0("R2 = ", format(modSum$adj.r.squared, digits = 3)))
+    text(x = min(k600_clean$logmeanQ_cms)*0.5, y = max(k600_clean$peakMaxTravelTime)*0.7,
+         labels = paste0("p = ", format(modSum$coefficients[2,4], digits = 2)))
+  } # Close else k600 available from neon
+
 
   #### Use Garcia&Gordon and Benson&Krause to calculate DO saturation % ########
   # Calculating DO % saturation under local conditions using equations from
