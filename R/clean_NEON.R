@@ -101,12 +101,27 @@ clean_NEON <-function(data, k600_clean, k600_fit){
 
   # Run the downstream and upstream sites through NA imputation
   # ARIMA is kinda slow, this might take a couple minutes
-  message("> Beginning imputation of missing sensor data at site S1. \n   This may take a few minutes.")
-  rawData_S1 <- imputeNA_NEON(rawData_S1)
-  message("> Missing sensor data from site S1 imputed via ARIMA model.")
-  message("> Beginning imputation of missing sensor data at site S2. \n   This may take a few minutes.")
-  rawData_S2 <- imputeNA_NEON(rawData_S2)
-  message("> Missing sensor data from site S2 imputed via ARIMA model.")
+  tryCatch(
+    {
+      message("> Beginning imputation of missing sensor data at site S1. \n   This may take a few minutes.")
+      rawData_S1 <- imputeNA_NEON(rawData_S1)
+      message("> Missing sensor data from site S1 imputed via ARIMA model.")
+    },
+    error = function(condition){
+      message("> ERROR: Imputation at site S1 returned an error. At least 3 non-NA data \n   points required in the time series to apply na_kalman imputation. \n   Therefore, imputation unsuccessful at S1. Are sensors at S1 down (NA) \n   for the time period of interest? If so, consider single-station modeling. ")
+    }
+  )
+  tryCatch(
+    {
+      message("> Beginning imputation of missing sensor data at site S2. \n   This may take a few minutes.")
+      rawData_S2 <- imputeNA_NEON(rawData_S2)
+      message("> Missing sensor data from site S2 imputed via ARIMA model.")
+      },
+    error = function(condition){
+      message("> ERROR: Imputation at site S2 returned an error. At least 3 non-NA data \n   points required in the time series to apply na_kalman imputation. \n   Therefore, imputation unsuccessful at S2. Are sensors at S2 down (NA) \n   for the time period of interest? If so, consider single-station modeling. ")
+    }
+  )
+
   # Unite data back into a single dataframe
   data <- dplyr::full_join(rawData_S1, rawData_S2)
 
