@@ -256,38 +256,58 @@ request_NEON <- function(NEONsites, startdate, enddate, reaerationPlotPath){
                                      FieldDischarge$dsc_fieldDataADCP,
                                    waq_instantaneous = WaterQual$waq_instantaneous)
 
-  # Run calculation for SF6 loss rates from raw gas data
-  Reaeration_clean <- reaRate::gas.loss.rate.plot(inputFile = Reaeration_data,
-                                                  savePlotPath = reaerationPlotPath)
-  # Calculate travel times
-  Reaeration_travelTimes <- reaRate::def.calc.trvl.time(inputFile = Reaeration_clean,
-                                                        loggerData = Reaeration$rea_conductivityFieldData,
-                                                        plot = TRUE)
-  # Calculate k600 based on SF6 loss rates
-  ReaerationRates <- reaRate::def.calc.reaeration(inputFile = Reaeration_travelTimes$outputDF,
-                                                   lossRateSF6 = "slopeClean",
-                                                   outputSuffix = "clean")
-  # Assemble output dataframes
-  reaeration_data <- Reaeration_clean
-  k600_expanded <- Reaeration_travelTimes
-  k600 <- ReaerationRates
+  tryCatch(
+    {
+      # Run calculation for SF6 loss rates from raw gas data
+      Reaeration_clean <- reaRate::gas.loss.rate.plot(inputFile = Reaeration_data,
+                                                      savePlotPath = reaerationPlotPath)
+      # Calculate travel times
+      Reaeration_travelTimes <- reaRate::def.calc.trvl.time(inputFile = Reaeration_clean,
+                                                            loggerData = Reaeration$rea_conductivityFieldData,
+                                                            plot = TRUE)
+      # Calculate k600 based on SF6 loss rates
+      ReaerationRates <- reaRate::def.calc.reaeration(inputFile = Reaeration_travelTimes$outputDF,
+                                                      lossRateSF6 = "slopeClean",
+                                                      outputSuffix = "clean")
 
-  # Remove K estimates that are less than 0
-  k600_clean <- k600[which(k600$k600.clean > 0),]
+      # Assemble output dataframes
+      reaeration_data <- Reaeration_clean
+      k600_expanded <- Reaeration_travelTimes
+      k600 <- ReaerationRates
 
-  # Linear model of Q vs K600
-  lmk600 <- lm(k600.clean ~ meanQ_cms, data = k600_clean)
+      # Remove K estimates that are less than 0
+      k600_clean <- k600[which(k600$k600.clean > 0),]
 
-  # Plot
-  plot(x = k600_clean$meanQ_cms, y = k600_clean$k600.clean,
-       main = paste0(unique(k600_clean$siteID),
-                     ": Mean Q Against Estimated k600"),
-       xlab = "Mean Q", ylab = "k600")
-  abline(lmk600, lty = 2, col = "red")
-  mtext(paste0("k600 = ", round(summary(lmk600)$coefficients[1], 3), " + ",
-               round(summary(lmk600)$coefficients[2], 3), " * MeanQ, ",
-               "R^2 = ", round(summary(lmk600)$r.squared, 3), side = 3),
-        col = "red")
+      # Linear model of Q vs K600
+      lmk600 <- lm(k600.clean ~ meanQ_cms, data = k600_clean)
+
+      # Plot
+      plot(x = k600_clean$meanQ_cms, y = k600_clean$k600.clean,
+           main = paste0(unique(k600_clean$siteID),
+                         ": Mean Q Against Estimated k600"),
+           xlab = "Mean Q", ylab = "k600")
+      abline(lmk600, lty = 2, col = "red")
+      mtext(paste0("k600 = ", round(summary(lmk600)$coefficients[1], 3), " + ",
+                   round(summary(lmk600)$coefficients[2], 3), " * MeanQ, ",
+                   "R^2 = ", round(summary(lmk600)$r.squared, 3), side = 3),
+            col = "red")
+
+    },
+    error = function(condition){
+      # Output error message if there is no reaeration data available
+      message("> ERROR: Gas loss rate plots could not be made for reaeration data, \n   as no injection types include gas releases. ")
+
+    }
+  )
+
+  # If tryCatch returned error because there was no gas injections, populate
+  # k600 values with NA
+  if(!exists("reaeration_data")){
+    k600_clean <- NA
+    k600_fit <- NA
+    k600_expanded <- NA
+    reaeration_data <- "No gas injection data available at site"
+  }
 
   ################### Output data to user #######################################
   # Remove dataframes from the environment that are generated within the
