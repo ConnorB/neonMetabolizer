@@ -1,6 +1,6 @@
 Package: neonMetabolizer
 Title: Model Two-Station Stream Metabolism from NEON Science Data
-Version: 0.0.1
+Version: 0.1.0
 Date: 2022-09-30
 Authors@R: 
     person("Michelle Catherine", "Kelly", , "mckelly1@mtu.edu", role = c("aut", "cre"))
