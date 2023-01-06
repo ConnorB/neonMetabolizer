@@ -33,9 +33,6 @@ clean_NEON <-function(data, k600_clean, k600_fit){
                 "WaterPres_kPa", "Depth_m", "Discharge_m3s","Light_PAR")
 
   # PAR: all nighttime PAR that's below 0 should be set to == 0.
-  # Sometimes, esp. if large gaps in data/start of dataset, ARIMA will predict
-  # PAR data as dipping below 0, but this is not possible, so hard set to
-  # 0 if negative
   # If numeric data (which should all be > 0, is < 0, replace with NA) &
   # if there are any infinite values (Inf), replace these with NA
   data <-
@@ -124,6 +121,13 @@ clean_NEON <-function(data, k600_clean, k600_fit){
 
   # Unite data back into a single dataframe
   data <- dplyr::full_join(rawData_S1, rawData_S2)
+
+  # Sometimes, esp. if large gaps in data/start of dataset, ARIMA will predict
+  # PAR data as dipping below 0, but this is not possible, so hard set to
+  # 0 if negative
+  data <-
+    data %>%
+    mutate(Light_PAR, ~ifelse(. < 0, 0, .))
 
   #### Add K based on lm relationship #########################################
   # Check for discharge == 0
