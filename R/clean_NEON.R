@@ -128,6 +128,7 @@ clean_NEON <-function(data, k600_clean, k600_fit){
   data <-
     data %>%
     mutate(Light_PAR = ifelse(Light_PAR < 0, 0, Light_PAR))
+  message("> Fix less than 0 extrapolation errors in Light_PAR")
 
   #### Add K based on lm relationship #########################################
   # Check for discharge == 0
