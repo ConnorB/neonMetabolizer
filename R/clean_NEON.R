@@ -127,7 +127,7 @@ clean_NEON <-function(data, k600_clean, k600_fit){
   # 0 if negative
   data <-
     data %>%
-    mutate(Light_PAR, ~ifelse(. < 0, 0, .))
+    mutate(Light_PAR = ifelse(Light_PAR < 0, 0, Light_PAR))
 
   #### Add K based on lm relationship #########################################
   # Check for discharge == 0
