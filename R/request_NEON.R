@@ -29,6 +29,8 @@
 #'    data request
 #' @param enddate YYYY-MM character string defining end year and month for
 #'    data request
+#' @param APIkey API key from neonscience.org account, allows users to download more data without waiting for the rate limit time
+#' @param nCores The number of cores to parallelize stacking NEON tables, default is 1
 #' @param reaerationPlotPath string containing file path for where to save travel time plots,
 #'    ex. `reaerationPlotPath = paste0(getwd(), "/data/rawData/reaerationPlots/")`
 #'
@@ -48,7 +50,7 @@
 #' }
 #'
 #' @export
-request_NEON <- function(NEONsites, startdate, enddate, reaerationPlotPath){
+request_NEON <- function(NEONsites, startdate, enddate, APIkey = NA_character_, nCores = 1, reaerationPlotPath){
   #### Input parameters ######################################################
   # Define parameters of interest necessary for metabolism modeling
   params <- c("DP1.20288.001", "DP1.20053.001", "DP1.00024.001",
@@ -69,6 +71,8 @@ request_NEON <- function(NEONsites, startdate, enddate, reaerationPlotPath){
     assign(names(dpID),
            value = neonUtilities::loadByProduct(dpID = dpID, site = NEONsites,
                                                 startdate = startdate, enddate = enddate,
+                                                token = APIkey,
+                                                nCores = nCores,
                                                 package = "basic", check.size = F))
   }
 
@@ -76,9 +80,13 @@ request_NEON <- function(NEONsites, startdate, enddate, reaerationPlotPath){
   Reaeration <- neonUtilities::loadByProduct(dpID = "DP1.20190.001",
                                              site = NEONsites,
                                              package = "expanded",
+                                             token = APIkey,
+                                             nCores = nCores,
                                              check.size = F)
   FieldDischarge <- neonUtilities::loadByProduct(dpID = "DP1.20048.001",
                                                  site = NEONsites,
+                                                 token = APIkey,
+                                                 nCores = nCores,
                                                  package = "expanded",
                                                  check.size = F)
 
