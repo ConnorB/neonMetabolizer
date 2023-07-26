@@ -24,7 +24,7 @@ clean_NEON <-function(data, k600_clean, k600_fit){
   # Convert from UTC to solar time
   data$solarTime <-
     convert_UTC_to_solartime(data$DateTime_UTC,
-                             longitude = data$referenceLongitude)
+                             longitude = data$locationReferenceLongitude)
 
   #### Search for obviously erronious sensor data ##############################
   # List of sensor data columns
