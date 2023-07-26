@@ -4,7 +4,7 @@
 \alias{clean_NEON}
 \title{Clean NEON metabolism parameter data and prep for two-station stream metabolism modeling}
 \usage{
-clean_NEON(data, k600_clean, k600_fit)
+clean_NEON(data, k600_clean, k600_fit, maxfill = Inf)
 }
 \arguments{
 \item{data}{Dataframe of metabolism parameter time series, \code{data} in list output of the @request_NEON function}
@@ -12,6 +12,8 @@ clean_NEON(data, k600_clean, k600_fit)
 \item{k600_clean}{Dataframe of summarized K600 estimates and parameters used for K600 calculations, \code{k600_clean} in list output of the @request_NEON function}
 
 \item{k600_fit}{Linear model output for the relationship between mean Q and K600 at the site, \code{k600_fit} in list output of the @request_NEON function}
+
+\item{maxfill}{Number of successive NAs to fill with imputation, defaults to replacing all NA values. If there are long gaps in the sensor data, you may want to retain them}
 }
 \description{
 Clean NEON metabolism parameter data and prep for two-station stream metabolism modeling
