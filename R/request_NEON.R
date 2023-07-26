@@ -227,8 +227,8 @@ request_NEON <- function(NEONsites, startdate, enddate, APIkey = NA_character_, 
   # Grab longitude of currently in use sensor stations
   sensorPos <-
     WaterQual$sensor_positions_20288 %>%
-    dplyr::filter(referenceEnd == "") %>%
-    dplyr::select(siteID, HOR.VER, referenceLongitude) %>%
+    dplyr::filter(positionEndDateTime == "") %>%
+    dplyr::select(siteID, HOR.VER, locationReferenceLongitude) %>%
     dplyr::mutate(HOR.VER = regmatches(HOR.VER, regexpr(pattern = "^\\d{3}",
                                                         text = HOR.VER)),
                   HOR.VER = dplyr::recode(HOR.VER, "101" = "S1", "102" = "S2")) %>%

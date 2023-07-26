@@ -4,7 +4,14 @@
 \alias{request_NEON}
 \title{Request data products from NEON API for two-station metabolism modeling}
 \usage{
-request_NEON(NEONsites, startdate, enddate, reaerationPlotPath)
+request_NEON(
+  NEONsites,
+  startdate,
+  enddate,
+  APIkey = NA_character_,
+  nCores = 1,
+  reaerationPlotPath
+)
 }
 \arguments{
 \item{NEONsites}{character string specifying 4-letter NEON site code to
@@ -16,6 +23,10 @@ data request}
 
 \item{enddate}{YYYY-MM character string defining end year and month for
 data request}
+
+\item{APIkey}{API key from neonscience.org account, allows users to download more data without waiting for the rate limit time}
+
+\item{nCores}{The number of cores to parallelize stacking NEON tables, default is 1}
 
 \item{reaerationPlotPath}{string containing file path for where to save travel time plots,
 ex. \code{reaerationPlotPath = paste0(getwd(), "/data/rawData/reaerationPlots/")}}
