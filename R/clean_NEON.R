@@ -5,6 +5,7 @@
 #' @param data Dataframe of metabolism parameter time series, `data` in list output of the @request_NEON function
 #' @param k600_clean Dataframe of summarized K600 estimates and parameters used for K600 calculations, `k600_clean` in list output of the @request_NEON function
 #' @param k600_fit Linear model output for the relationship between mean Q and K600 at the site, `k600_fit` in list output of the @request_NEON function
+#' @param maxfill Number of successive NAs to fill with imputation, defaults to replacing all NA values. If there are long gaps in the sensor data, you may want to retain them
 #'
 #' @return
 #'
@@ -13,7 +14,7 @@
 #' @examples
 #'
 #' @export
-clean_NEON <-function(data, k600_clean, k600_fit){
+clean_NEON <-function(data, k600_clean, k600_fit, maxfill = Inf){
   # Arrange by date
   data <- dplyr::arrange(data, DateTime_UTC)
 
@@ -89,7 +90,7 @@ clean_NEON <-function(data, k600_clean, k600_fit){
     for (i in seq_along(sensCols)){
       # Impute gaps using ARIMA model
       imp <- imputeTS::na_kalman(dataframe %>% dplyr::select(sensCols[i]),
-                                 model = "auto.arima")
+                                 model = "auto.arima", maxgap = maxfill)
       # Set values in dataframe to imputed values
       dataframe[sensCols[i]] <- imp
     }
