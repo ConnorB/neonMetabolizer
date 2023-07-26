@@ -313,6 +313,7 @@ request_NEON <- function(NEONsites, startdate, enddate, APIkey = NA_character_, 
   if(!exists("reaeration_data")){
     k600_clean <- NA
     k600_fit <- NA
+    lmk600 <- NA
     k600_expanded <- NA
     reaeration_data <- "No gas injection data available at site"
   }
