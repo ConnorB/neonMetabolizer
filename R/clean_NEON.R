@@ -290,7 +290,7 @@ clean_NEON <-function(data, k600_clean, k600_fit, maxfill = Inf){
   data <- data %>%
     relocate(c(solarTime), .after = c(DateTime_UTC)) %>%
     relocate(c(DOsat_mgL, DOsat_pct), .after = DO_mgL) %>%
-    relocate(referenceLongitude, .after = horizontalPosition)
+    relocate(locationReferenceLongitude, .after = horizontalPosition)
 
   #### Format cleanData for metabolism modeling ################################
   # Seperate upstream and downstream data from the dataframe,
