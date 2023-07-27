@@ -25,9 +25,9 @@
 #' @param NEONsites character string specifying 4-letter NEON site code to
 #'   request data from (ex. `"HOPB"`). Can be more than one site
 #'   (ex.`c("HOPB", "BLDE")` but be warned data pull will take longer)
-#' @param startdate YYYY-MM character string defining start year and month for
+#' @param startdate NA for all available data, or YYYY-MM character string defining start year and month for
 #'    data request
-#' @param enddate YYYY-MM character string defining end year and month for
+#' @param enddate NA for all available data, or YYYY-MM character string defining end year and month for
 #'    data request
 #' @param APIkey API key from neonscience.org account, allows users to download more data without waiting for the rate limit time
 #' @param nCores The number of cores to parallelize stacking NEON tables, default is 1
@@ -50,7 +50,7 @@
 #' }
 #'
 #' @export
-request_NEON <- function(NEONsites, startdate, enddate, APIkey = NA_character_, nCores = 1, reaerationPlotPath){
+request_NEON <- function(NEONsites, startdate = NA, enddate = NA, APIkey = NA_character_, nCores = 1, reaerationPlotPath){
   #### Input parameters ######################################################
   # Define parameters of interest necessary for metabolism modeling
   params <- c("DP1.20288.001", "DP1.20053.001", "DP1.00024.001",

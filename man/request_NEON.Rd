@@ -6,8 +6,8 @@
 \usage{
 request_NEON(
   NEONsites,
-  startdate,
-  enddate,
+  startdate = NA,
+  enddate = NA,
   APIkey = NA_character_,
   nCores = 1,
   reaerationPlotPath
@@ -18,10 +18,10 @@ request_NEON(
 request data from (ex. \code{"HOPB"}). Can be more than one site
 (ex.\code{c("HOPB", "BLDE")} but be warned data pull will take longer)}
 
-\item{startdate}{YYYY-MM character string defining start year and month for
+\item{startdate}{NA for all available data, or YYYY-MM character string defining start year and month for
 data request}
 
-\item{enddate}{YYYY-MM character string defining end year and month for
+\item{enddate}{NA for all available data, or YYYY-MM character string defining end year and month for
 data request}
 
 \item{APIkey}{API key from neonscience.org account, allows users to download more data without waiting for the rate limit time}
