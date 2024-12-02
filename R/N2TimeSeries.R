@@ -1,9 +1,9 @@
-#' \code{O2TimeSeries} Return modeled oxygen time series from median GPP, ER estimates
+#' \code{N2TimeSeries} Return modeled oxygen time series from median GPP, ER estimates
 #'
 #' Internal function.
 #'
-#' @param GPP Description
-#' @param ER Description
+#' @param NConsume Description
+#' @param DN Description
 #' @param data Dataframe of cleaned raw two station data (ex. "TS_S1S2")
 #' @param K600mean Description
 #' @param z Description
@@ -23,7 +23,7 @@
 #'
 #' Populate here
 #'
-O2TimeSeries <- function(GPP, ER, data, K600mean, z, tt, upName, downName, gas, n) {
+N2TimeSeries <- function(NConsume, DN, data, K600mean, z, tt, upName, downName, gas, n) {
   # Ungroup data
   data <- data %>% dplyr::ungroup()
 
@@ -42,10 +42,10 @@ O2TimeSeries <- function(GPP, ER, data, K600mean, z, tt, upName, downName, gas, 
   tempup <- updata$WaterTemp_C[1:as.numeric(length(updata$WaterTemp_C)-lag)] # trim the end by the lag
   tempdown <- downdata$WaterTemp_C[(1+lag):length(downdata$WaterTemp_C)]
 
-  oxyup <- updata$DO_mgL[1:as.numeric(length(updata$WaterTemp_C)-lag)]
+  n2up <- updata$N2_mgL[1:as.numeric(length(updata$WaterTemp_C)-lag)]
   # define osat
-  osat <- updata$DOsat_mgL[1:as.numeric(length(updata$WaterTemp_C)-lag)]
-  oxydown <- downdata$DO_mgL[(1+lag):length(downdata$WaterTemp_C)]
+  nsat <- updata$N2sat_mgL[1:as.numeric(length(updata$WaterTemp_C)-lag)]
+  n2down <- downdata$N2_mgL[(1+lag):length(downdata$WaterTemp_C)]
 
   timeup <- updata$solarTime[1:(length(updata$WaterTemp_C)-lag)]
   timedown <- downdata$solarTime[(1+lag):length(downdata$WaterTemp_C)]
@@ -53,17 +53,17 @@ O2TimeSeries <- function(GPP, ER, data, K600mean, z, tt, upName, downName, gas, 
   light <- downdata$Light_PAR
 
   # Initialize an empty vector
-  modeledO2 <- numeric(length(oxyup))
+  modeledN2 <- numeric(length(n2up))
   # Calculate metabolism at each timestep
-  for (i in 1:length(oxyup)) {
+  for (i in 1:length(n2up)) {
     # Check if non-NA data on date, if GPP is NA, go to next date in sequence
-    if(is.na(GPP)){
+    if(is.na(NConsume)){
       # If there is no GPP estimate, move on to next row in dataframe
       next
     } else{
-      modeledO2[i] <- (oxyup[i] + ((GPP/z)*(sum(light[i:(i+lag)]) / sum(light))) +
-                         ER*tt/z +
-                         (Kcor(tempup[i],K600mean, gas = gas, n = n))*tt*(osat[i] - oxyup[i] +  osat[i])/2) /
+      modeledN2[i] <- (n2up[i] + ((NConsume/z)*(sum(light[i:(i+lag)]) / sum(light))) +
+                         DN*tt/z +
+                         (Kcor(tempup[i],K600mean, gas = gas, n = n))*tt*(nsat[i] - n2up[i] +  nsat[i])/2) /
         (1 + Kcor(tempup[i],K600mean, gas = gas, n = n)*tt/2)
     } # close else
   }
@@ -73,6 +73,6 @@ O2TimeSeries <- function(GPP, ER, data, K600mean, z, tt, upName, downName, gas, 
   timedown <- as.POSIXlt(timedown, origin = "1970-01-01")
 
   gasmodel <- data.frame(timeup, timedown,
-                         oxydown, oxyup, modeledO2)
+                         n2down, n2up, modeledN2)
   return(gasmodel)
 }

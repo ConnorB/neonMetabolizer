@@ -13,7 +13,9 @@
 #' @examples
 #'
 #' @export
-fit_twostation <-function(data, modType, nbatch = 1e5){
+fit_twostation <-function(data, modType, nbatch = 1e5, gas, n = 0.5,
+                          K600_mean = NULL, K600_sd = NULL,
+                          upstreamName = "S1", downstreamName = "S2"){
   # Add date column to dataframe based on solar time - this gets passed into
   # twostationpostsum
   data$date <- lubridate::date(data$solarTime)
@@ -37,21 +39,32 @@ fit_twostation <-function(data, modType, nbatch = 1e5){
   dateList <- unique(data$date)
   results_accept <- list(rep(NA, length(dateList)))
   results_metab_date <- list(rep(NA, length(dateList)))
-  results_metab_GPP <- list(rep(NA, length(dateList)))
-  results_metab_GPP.lower <- list(rep(NA, length(dateList)))
-  results_metab_GPP.upper <- list(rep(NA, length(dateList)))
-  results_metab_ER <- list(rep(NA, length(dateList)))
-  results_metab_ER.lower <- list(rep(NA, length(dateList)))
-  results_metab_ER.upper <- list(rep(NA, length(dateList)))
-  results_metab_K <- list(rep(NA, length(dateList)))
-  results_metab_K.lower <- list(rep(NA, length(dateList)))
-  results_metab_K.upper <- list(rep(NA, length(dateList)))
+  results_metab_K600 <- list(rep(NA, length(dateList)))
+  results_metab_K600.lower <- list(rep(NA, length(dateList)))
+  results_metab_K600.upper <- list(rep(NA, length(dateList)))
   results_metab_s <- list(rep(NA, length(dateList)))
   results_metab_s.lower <- list(rep(NA, length(dateList)))
   results_metab_s.upper <- list(rep(NA, length(dateList)))
   results_warnings <- list(rep(NA, length(dateList)))
-  results_modeledO2 <- list()
+  results_modeledGas <- list()
 
+  if(gas == "O2"){
+    results_metab_GPP <- list(rep(NA, length(dateList)))
+    results_metab_GPP.lower <- list(rep(NA, length(dateList)))
+    results_metab_GPP.upper <- list(rep(NA, length(dateList)))
+    results_metab_ER <- list(rep(NA, length(dateList)))
+    results_metab_ER.lower <- list(rep(NA, length(dateList)))
+    results_metab_ER.upper <- list(rep(NA, length(dateList)))
+  }
+  if(gas == "N2"){
+    results_metab_NConsume <- list(rep(NA, length(dateList)))
+    results_metab_NConsume.lower <- list(rep(NA, length(dateList)))
+    results_metab_NConsume.upper <- list(rep(NA, length(dateList)))
+    results_metab_DN <- list(rep(NA, length(dateList)))
+    results_metab_DN.lower <- list(rep(NA, length(dateList)))
+    results_metab_DN.upper <- list(rep(NA, length(dateList)))
+  }
+  i <- 1
   for (i in seq_along(dateList)){
     # Grab date
     modelDate <- dateList[i]
@@ -71,9 +84,9 @@ fit_twostation <-function(data, modType, nbatch = 1e5){
       results_metab_ER[i] <- NA
       results_metab_ER.lower[i] <- NA
       results_metab_ER.upper[i] <- NA
-      results_metab_K[i] <- NA
-      results_metab_K.lower[i] <- NA
-      results_metab_K.upper[i] <- NA
+      results_metab_K600[i] <- NA
+      results_metab_K600.lower[i] <- NA
+      results_metab_K600.upper[i] <- NA
       results_metab_s[i] <- NA
       results_metab_s.lower[i] <- NA
       results_metab_s.upper[i] <- NA
@@ -81,99 +94,111 @@ fit_twostation <-function(data, modType, nbatch = 1e5){
       next
     }
 
-    # If not a full day of data, skip
-    # Readings every 15 min = 96 readings / day * 2 stations = 192 rows
-    #if(sum(lubridate::date(data_subset$solarTime) == modelDate) < 192) {
-  #    message("NOTE: Date ", modelDate," contains less than a full day of obervations and was skipped")
-      #### Add day of modeled data to list ####################################
-   #   model_accept[i] <- NA
-    #  model_metab_date[i] <- modelDate
-     # model_metab_GPP[i] <- NA
-      #model_metab_GPP.lower[i] <- NA
-      #model_metab_GPP.upper[i] <- NA
-      #model_metab_ER[i] <- NA
-      #model_metab_ER.lower[i] <- NA
-      #model_metab_ER.upper[i] <- NA
-      #model_metab_K[i] <- NA
-      #model_metab_K.lower[i] <- NA
-      #model_metab_K.upper[i] <- NA
-      #model_metab_s[i] <- NA
-      #model_metab_s.lower[i] <- NA
-      #model_metab_s.upper[i] <- NA
-      #next
-    #}
-
     #### Get mean travel time on selected day, convert from seconds to days #
     travelTime_days <- mean(data_subset$travelTime_s) / 86400
 
     #### Get mean depth on selected day #####################################
     depth_m <- mean(data_subset$Depth_m)
 
-    #### Get mean and standard deviation of K600 on selected day ############
-    k600_mean <- mean(data_subset$k600)
-    k600_sd <- mean(data_subset$k600_sd)
-    #k600_sd <- 0.001
-    #k600_sd <- mean(data_subset$k600_sd) # will this improve fits? giving 5% wiggle room
-    #k600_sd <- 5 # super constrained fit on k
+    #### Reaeration ###########################################################
+    # Get mean and standard deviation of K600 on selected day
+    if(is.null(K600_mean) & is.null(K600_sd)){
+      K600_mean <- mean(data_subset$K600)
+      K600_sd <- mean(data_subset$K600_sd)
+    }
 
     #### Run 2-station metabolism modeling function for selected day ########
     # "Start" denotes the initial state of the markov chain for GPP, ER,
     # K, and s, 'start' is not the same an informative prior
     metab_out <- twostationpostsum(start = c(3.1, -7.1, 7, -2.2),
                                    modType = modType,
-                                   O2data = data_subset,
+                                   data = data_subset,
                                    z = depth_m,
                                    tt = travelTime_days,
-                                   Kmean = k600_mean,
-                                   Ksd = k600_sd,
-                                   upName = "S1", downName = "S2",
+                                   K600mean = K600_mean,
+                                   K600sd = K600_sd,
+                                   upName = upstreamName,
+                                   downName = downstreamName,
+                                   gas = gas, n = n,
                                    nbatch = nbatch, scale = 0.3)
 
     #### Add day of modeled data to list ####################################
     results_accept[i] <- metab_out$accept
     results_metab_date[i] <- metab_out$pred.metab$date
-    results_metab_GPP[i] <- metab_out$pred.metab$GPP
-    results_metab_GPP.lower[i] <- metab_out$pred.metab$GPP.lower
-    results_metab_GPP.upper[i] <- metab_out$pred.metab$GPP.upper
-    results_metab_ER[i] <-  metab_out$pred.metab$ER
-    results_metab_ER.lower[i] <- metab_out$pred.metab$ER.lower
-    results_metab_ER.upper[i] <- metab_out$pred.metab$ER.upper
-    results_metab_K[i] <- metab_out$pred.metab$K
-    results_metab_K.lower[i] <- metab_out$pred.metab$K.lower
-    results_metab_K.upper[i] <- metab_out$pred.metab$K.upper
+    results_metab_K600[i] <- metab_out$pred.metab$K600
+    results_metab_K600.lower[i] <- metab_out$pred.metab$K600.lower
+    results_metab_K600.upper[i] <- metab_out$pred.metab$K600.upper
     results_metab_s[i] <- metab_out$pred.metab$s
     results_metab_s.lower[i] <- metab_out$pred.metab$s.lower
     results_metab_s.upper[i] <- metab_out$pred.metab$s.upper
     results_warnings[i] <- NA
 
-    results_modeledO2[[i]] <- metab_out$oxymodel
+    if(gas == "N2"){
+      results_metab_NConsume[i] <- metab_out$pred.metab$NConsume
+      results_metab_NConsume.lower[i] <- metab_out$pred.metab$NConsume.lower
+      results_metab_NConsume.upper[i] <- metab_out$pred.metab$NConsume.upper
+      results_metab_DN[i] <-  metab_out$pred.metab$DN
+      results_metab_DN.lower[i] <- metab_out$pred.metab$DN.lower
+      results_metab_DN.upper[i] <- metab_out$pred.metab$DN.upper
+    }
+    if(gas == "O2"){
+      results_metab_GPP[i] <- metab_out$pred.metab$GPP
+      results_metab_GPP.lower[i] <- metab_out$pred.metab$GPP.lower
+      results_metab_GPP.upper[i] <- metab_out$pred.metab$GPP.upper
+      results_metab_ER[i] <-  metab_out$pred.metab$ER
+      results_metab_ER.lower[i] <- metab_out$pred.metab$ER.lower
+      results_metab_ER.upper[i] <- metab_out$pred.metab$ER.upper
+    }
+
+    results_modeledGas[[i]] <- metab_out$modeledGas
 
     message(modelDate," modeled.")
   } # Exit loop for modeling the modelBlock
 
-  # Combine metabolism results dataframe
-  results <- data.frame(date = as.Date(unlist(results_metab_date),
-                                       origin = "1970-01-01"),
-                        GPP = unlist(results_metab_GPP),
-                        GPP.lower = unlist(results_metab_GPP.lower),
-                        GPP.upper = unlist(results_metab_GPP.upper),
-                        ER = unlist(results_metab_ER),
-                        ER.lower = unlist(results_metab_ER.lower),
-                        ER.upper = unlist(results_metab_ER.upper),
-                        k = unlist(results_metab_K),
-                        k.lower = unlist(results_metab_K.lower),
-                        k.upper = unlist(results_metab_K.upper),
-                        s = unlist(results_metab_s),
-                        s.lower = unlist(results_metab_s.lower),
-                        s.upper = unlist(results_metab_s.upper),
-                        warnings = unlist(results_warnings)
-                        )
+  if(gas == "N2"){
+    results <- data.frame(date = as.Date(unlist(results_metab_date),
+                                         origin = "1970-01-01"),
+                          NConsume = unlist(results_metab_NConsume),
+                          NConsume.lower = unlist(results_metab_NConsume.lower),
+                          NConsume.upper = unlist(results_metab_NConsume.upper),
+                          DN = unlist(results_metab_DN),
+                          DN.lower = unlist(results_metab_DN.lower),
+                          DN.upper = unlist(results_metab_DN.upper),
+                          K600 = unlist(results_metab_K600),
+                          K600.lower = unlist(results_metab_K600.lower),
+                          K600.upper = unlist(results_metab_K600.upper),
+                          s = unlist(results_metab_s),
+                          s.lower = unlist(results_metab_s.lower),
+                          s.upper = unlist(results_metab_s.upper),
+                          warnings = unlist(results_warnings)
+    )
+  }
+  if(gas == "O2"){
+    # Combine metabolism results dataframe
+    results <- data.frame(date = as.Date(unlist(results_metab_date),
+                                         origin = "1970-01-01"),
+                          GPP = unlist(results_metab_GPP),
+                          GPP.lower = unlist(results_metab_GPP.lower),
+                          GPP.upper = unlist(results_metab_GPP.upper),
+                          ER = unlist(results_metab_ER),
+                          ER.lower = unlist(results_metab_ER.lower),
+                          ER.upper = unlist(results_metab_ER.upper),
+                          K600 = unlist(results_metab_K600),
+                          K600.lower = unlist(results_metab_K600.lower),
+                          K600.upper = unlist(results_metab_K600.upper),
+                          s = unlist(results_metab_s),
+                          s.lower = unlist(results_metab_s.lower),
+                          s.upper = unlist(results_metab_s.upper),
+                          warnings = unlist(results_warnings)
+    )
+  }
+
   results$accept <- unlist(results_accept)
-  results_modeledO2 <- dplyr::bind_rows(results_modeledO2)
+  results_modeledGas <- dplyr::bind_rows(results_modeledGas)
 
   # Return to user
   return(list(results = results,
-              modeledO2 = results_modeledO2,
+              modeledGas = results_modeledGas,
               data = data))
 }
 

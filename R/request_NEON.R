@@ -296,7 +296,6 @@ request_NEON <- function(NEONsites, startdate, enddate, reaerationPlotPath){
     error = function(condition){
       # Output error message if there is no reaeration data available
       message("> ERROR: Gas loss rate plots could not be made for reaeration data, \n   as no injection types include gas releases. ")
-
     }
   )
 
