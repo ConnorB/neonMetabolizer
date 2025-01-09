@@ -76,7 +76,8 @@ twostationpostsum <- function(data, upName, downName, start, z, tt, K600mean, K6
     # are designed to work with our data structure.
     if(length(updata$DO_mgL) < lag) {
       # If there is less data during a day than the lag interval, move to next day
-      message("ERROR: model not computed for ", dateList[i], " as insufficient observations provided.")
+      message("ERROR: model not computed for ",
+              dateList[i], " as insufficient observations provided.")
       # Add NA values to dataframe
       K600[i] <- NA
       K600.lower[i] <- NA
@@ -113,7 +114,8 @@ twostationpostsum <- function(data, upName, downName, start, z, tt, K600mean, K6
         finallight <- lightmean[length(lightmean)]
         # Extrapolate final light as last light values
         lightmean <- c(lightmean, rep(finallight, 1+lag))
-        light <- lightdown
+        light <- lightmean
+        #light <- lightdown
         if(gas == "O2"){
           oxyup <- updata$DO_mgL[1:as.numeric(length(updata$WaterTemp_C)-lag)]
           osatup <- updata$DOsat_mgL[1:as.numeric(length(updata$WaterTemp_C)-lag)]
@@ -122,109 +124,9 @@ twostationpostsum <- function(data, upName, downName, start, z, tt, K600mean, K6
         }
         if(gas == "N2"){
           n2up <- updata$N2_mgL[1:as.numeric(length(updata$WaterTemp_C)-lag)]
-          nsat <- updata$N2sat_mgL[1:as.numeric(length(updata$WaterTemp_C)-lag)]
+          nsatup <- updata$N2sat_mgL[1:as.numeric(length(updata$WaterTemp_C)-lag)]
           n2down <- downdata$N2_mgL[(1+lag):length(downdata$WaterTemp_C)]
-        }
-        # For MLE modeling
-        if(modType == "mle"){
-          # Wrap within trycatch, which will print a descriptive error if nlm fails
-          tryCatch(
-            {
-              # Try to evaluate nlm with data
-              if(gas == "O2"){
-                met.post <- nlm(tspost,
-                                hessian = TRUE, #control=list(trace=TRUE, maxit=2000),
-                                gas = "O2", n = 0.5,
-                                p = start, tempup = tempup, tempdown = tempdown,
-                                oxyup = oxyup, osat = osat, oxydown = oxydown, z = z,
-                                light = light, tt = tt, K600mean = K600mean, K600sd = K600sd)
-              }
-              if(gas == "N2"){
-                met.post <- nlm(tspost_N2,
-                                hessian = TRUE, control=list(trace=TRUE, maxit=2000),
-                                p = start, tempup = tempup, tempdown = tempdown,
-                                oxyup = oxyup, osat = osat, oxydown = oxydown, z = z,
-                                light = light, tt = tt, K600mean = K600mean, K600sd = K600sd)
-              }
-
-              # Compute standard errors
-              nlmErr <- sqrt(diag(solve(-met.post[["hessian"]])))
-                # If this can't compute - it will return NaN
-              # 95% confidence intervals will be parameter +- 1.96*std error
-              K600[i] <- met.post$estimate[3]
-              K600.lower[i] <- met.post$estimate[3] - 1.96*nlmErr[3]
-              K600.upper[i] <- met.post$estimate[3] + 1.96*nlmErr[3]
-              s[i] <- met.post$estimate[4]
-              s.lower[i] <- met.post$estimate[4] - 1.96*nlmErr[4]
-              s.upper[i] <- met.post$estimate[4] - 1.96*nlmErr[4]
-              accept[i] <- met.post$code # See nlm documentation for code information
-
-              if(gas == "O2"){
-                GPP[i] <- met.post$estimate[1]
-                GPP.lower[i] <- met.post$estimate[1] - 1.96*nlmErr[1]
-                GPP.upper[i] <- met.post$estimate[1] + 1.96*nlmErr[1]
-                ER[i] <- met.post$estimate[2]
-                ER.lower[i] <- met.post$estimate[2] - 1.96*nlmErr[2]
-                ER.upper[i] <- met.post$estimate[2] + 1.96*nlmErr[2]
-              }
-              if(gas == "N2"){
-                NConsume[i] <- met.post$estimate[1]
-                NConsume.lower[i] <- met.post$estimate[1] - 1.96*nlmErr[1]
-                NConsume.upper[i] <- met.post$estimate[1] + 1.96*nlmErr[1]
-                DN[i] <- met.post$estimate[2]
-                DN.lower[i] <- met.post$estimate[2] - 1.96*nlmErr[2]
-                DN.upper[i] <- met.post$estimate[2] + 1.96*nlmErr[2]
-              }
-            },
-            error = function(err){
-              # If nlm returns an error, print this error message to user
-              message(paste("ERROR: Non-finite estimate supplied by `nlm`. Modeling on date",
-                      dateList[i], "failed."))
-              # Add NA values to dataframe
-              K600[i] <- NA
-              K600.lower[i] <- NA
-              K600.upper[i] <- NA
-              s[i] <- NA
-              s.lower[i] <- NA
-              s.upper[i] <- NA
-              accept[i] <- "Model failure, non-finite estimate supplied by `nlm`."
-              if(gas == "O2"){
-                GPP[i] <- NA
-                GPP.lower[i] <- NA
-                GPP.upper[i] <- NA
-                ER[i] <- NA
-                ER.lower[i] <- NA
-                ER.upper[i] <- NA
-              }
-              if(gas == "N2") {
-                NConsume[i] <- NA
-                NConsume.lower[i] <- NA
-                NConsume.upper[i] <- NA
-                DN[i] <- NA
-                DN.lower[i] <- NA
-                DN.upper[i] <- NA
-              }
-            }, # Close error argument
-            warning = function(warn){
-              # If nlm returns a warning, print this error message to user
-              message(paste0("WARNING: NA/Inf replaced by maximum positive value \n\tduring one or more timesteps on ",
-                             dateList[i], "."))
-            }, #Close warning argument
-            finally = {
-              # Add data to dataframe of predicted metabolism values
-              if(gas == "O2"){
-                pred.metab <- data.frame(date = dateList, GPP, GPP.lower,
-                                         GPP.upper, ER, ER.lower, ER.upper, K600,
-                                         K600.lower,  K600.upper, s, s.lower, s.upper,
-                                         accept)
-              } else if(gas == "N2") {
-                pred.metab <- data.frame(date = dateList, NConsume, NConsume.lower,
-                                         NConsume.upper, DN, DN.lower, DN.upper,K600,
-                                         K600.lower,K600.upper, s, s.lower, s.upper,
-                                         accept)
-              }
-            } # Close finally argument
-          ) # Close tryCatch
+          nsatdown <- downdata$N2sat_mgL[(1+lag):length(downdata$WaterTemp_C)]
         }
         # For bayesian modeling
         if(modType == "bayes"){
@@ -272,12 +174,15 @@ twostationpostsum <- function(data, upName, downName, start, z, tt, K600mean, K6
           if(gas == "N2"){
             # perform MCMC
             # see documentation on mcmc
-            met.post <- mcmc::metrop(tspost_N2, initial = start, nbatch = nbatch,
+            met.post <- mcmc::metrop(tspost_N2, initial = start,
+                                     nbatch = nbatch,
                                      scale = scale, tempup = tempup,
                                      tempdown = tempdown, n2up = n2up,
-                                     nsat = nsat, n2down = n2down,  z = z,
+                                     nsatup = nsatup, n2down = n2down,
+                                     nsatdown = nsatdown, z = z,
                                      light = light, tt = tt, K600mean = K600mean,
-                                     K600sd = K600sd, gas = gas, n = n, debug = TRUE, nspac = 1)
+                                     K600sd = K600sd, gas = gas, n = n,
+                                     debug = TRUE, nspac = 1)
 
             # trying to troubleshoot here
             plot(ts(met.post$batch), main = dateList[i])
