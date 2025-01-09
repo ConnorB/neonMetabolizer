@@ -20,19 +20,6 @@ fit_twostation <-function(data, modType, nbatch = 1e5, gas, n = 0.5,
   # twostationpostsum
   data$date <- lubridate::date(data$solarTime)
 
-  #### Subset data where two station modeling is possible #####################
-  # IN FUTURE: experiment with filling short gaps in data
-
-  # Split time into chunks of all non-NA DO data or all NA DO data
-  #modelBlocks <- split(data, cumsum(c(TRUE, diff(is.na(data$DO_mgL)) != 0)))
-
-  # If model block has no entries, remove from list
- # for (i in seq_along(modelBlocks)) {
-  #  if (any(is.na(modelBlocks[[i]]$DO_mgL))) {
-   #   modelBlocks[[i]] <- NULL
-    #}
-  #} #this works correctly but throws a subscript out of bounds error, ive played with using appply functions insteadt but i can't get them to work
-
   #### Pass each modeling block to modeling functions #########################
   # Initiate empty lists to store all the modeling results in
   i = 1
