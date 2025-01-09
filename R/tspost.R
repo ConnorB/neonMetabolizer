@@ -11,7 +11,8 @@
 #' @param light any light unit
 #' @param tt travel time, days
 #' @param z Description
-#' @param osat Description
+#' @param osatup Description
+#' @param osatdown Description
 #' @param Kmean Description
 #' @param Ksd Description
 #'
