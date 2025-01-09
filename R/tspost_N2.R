@@ -11,7 +11,8 @@
 #' @param light any light unit
 #' @param tt travel time, days
 #' @param z Description
-#' @param osat Description
+#' @param nsatup Description
+#' @param nsatdown Description
 #' @param Kmean Description
 #' @param Ksd Description
 #'
@@ -26,8 +27,8 @@
 #' @example
 #'
 #' Populate here
-tspost_N2 <- function(MET, tempup, tempdown, n2up, n2down, light, tt, z, nsat,
-                   K600mean, K600sd, gas, n){
+tspost_N2 <- function(MET, tempup, tempdown, n2up, n2down, light, tt, z, nsatup,
+                      nsatdown, K600mean, K600sd, gas, n){
   # Assign the parameters we solve for to easy to understand values
   NConsume <- MET[1]
   DN <- MET[2]
@@ -48,10 +49,20 @@ tspost_N2 <- function(MET, tempup, tempdown, n2up, n2down, light, tt, z, nsat,
   # Kcor converts K600 to KO2 for a given temperature & gas type.
   for (i in 1:length(n2up)){
     # (this function from nifong et al )
-    metab[i] <- (n2up[i] + ((NConsume/z)*(sum(light[i:(i+lag)])/sum(light))) +
-                   DN*tt/z +
-                   (Kcor(tempup[i],K600mean, gas = gas, n = n))*tt*(nsat[i] - n2up[i] + nsat[i])/2) /
-      (1+ Kcor(tempup[i],K600mean, gas = gas, n = n)*tt/2)
+    metab[i] <-
+      (n2up[i] + (
+        (NConsume/z) *
+          ( sum(light[i:(i+lag)]) / sum(light) )
+        ) + DN * tt/z +
+         (
+           Kcor(tempup[i], K600mean, gas = gas, n = n)
+           ) * tt * (
+             nsatup[i] - n2up[i] + nsatdown[i]
+             ) / 2
+       ) /
+      (
+        1 + Kcor(tempup[i], K600mean, gas = gas, n = n) * tt / 2
+        )
   }
 
   # likelhood is below.  dnorm calculates the probablity density of a normal
@@ -60,12 +71,12 @@ tspost_N2 <- function(MET, tempup, tempdown, n2up, n2down, light, tt, z, nsat,
 
   prior <-
     # Priors for NConsume and DN based on Nifong et al 2020
-    #(dnorm(NConsume, mean = -1, sd = 5, log=TRUE)) +
-    #(dnorm(DN, mean = 1, sd = 5, log=TRUE)) +
+    (dnorm(NConsume, mean = -0.1, sd = 5, log=TRUE)) +
+    (dnorm(DN, mean = 0.1, sd = 5, log=TRUE)) +
     # Priors for NConsume and DN based on median N fix in Marcarelli et al 2024
     # and median Denitrification rates in Marcarelli et al 2024 & LINXII
-    (dnorm(NConsume, mean = -4.104199e-05, sd = 0.002207237, log=TRUE)) +
-    (dnorm(DN, mean = 0.01640903, sd = 0.0866865, log=TRUE)) +
+   # (dnorm(NConsume, mean = -4.104199e-05, sd = 0.002207237, log=TRUE)) +
+    #(dnorm(DN, mean = 0.01640903, sd = 0.0866865, log=TRUE)) +
     #(dnorm(K, mean=Kmean, sd=Ksd, log=TRUE)) +
     (dnorm(K600, mean=K600mean, sd=K600sd, log=TRUE))
 
