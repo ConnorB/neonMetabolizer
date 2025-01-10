@@ -73,7 +73,7 @@ tspost <- function(MET, tempup, tempdown, oxyup, oxydown, light, tt, z,
   prior <- (dnorm(GPP, mean=3.1, sd=6.0, log=TRUE)) +
     (dnorm(ER, mean=-7.1, sd=7.1, log=TRUE)) +
     #(dnorm(K, mean=Kmean, sd=Ksd, log=TRUE)) +
-    (dlnorm(K600, meanlog=K600mean, sdlog=K600sd, log=TRUE)) # Returned to user are K600 values
+    (dlnorm(K600, meanlog=K600mean, sdlog=K600sd, log=TRUE))
 
   return(loglik + prior)
 }

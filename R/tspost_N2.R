@@ -78,7 +78,7 @@ tspost_N2 <- function(MET, tempup, tempdown, n2up, n2down, light, tt, z, nsatup,
    # (dnorm(NConsume, mean = -4.104199e-05, sd = 0.002207237, log=TRUE)) +
     #(dnorm(DN, mean = 0.01640903, sd = 0.0866865, log=TRUE)) +
     #(dnorm(K, mean=Kmean, sd=Ksd, log=TRUE)) +
-    (dnorm(K600, mean=K600mean, sd=K600sd, log=TRUE))
+    (dlnorm(K600, meanlog=K600mean, sdlog=K600sd, log=TRUE))
 
   return(loglik + prior)
 }
