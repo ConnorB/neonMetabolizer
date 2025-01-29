@@ -15,7 +15,8 @@
 #' @export
 fit_twostation <-function(data, modType, nbatch = 1e5, gas, n = 0.5,
                           K600_mean = NULL, K600_sd = NULL,
-                          upstreamName = "S1", downstreamName = "S2"){
+                          upstreamName = "S1", downstreamName = "S2",
+                          eqn = NULL){
   # Add date column to dataframe based on solar time - this gets passed into
   # twostationpostsum
   data$date <- lubridate::date(data$solarTime)
@@ -42,6 +43,8 @@ fit_twostation <-function(data, modType, nbatch = 1e5, gas, n = 0.5,
     results_metab_ER <- list(rep(NA, length(dateList)))
     results_metab_ER.lower <- list(rep(NA, length(dateList)))
     results_metab_ER.upper <- list(rep(NA, length(dateList)))
+    # Set start point for modeling (original)
+    starts <- c(3.1, -7.1, 7, -2.2)
   }
   if(gas == "N2"){
     results_metab_NConsume <- list(rep(NA, length(dateList)))
@@ -50,6 +53,9 @@ fit_twostation <-function(data, modType, nbatch = 1e5, gas, n = 0.5,
     results_metab_DN <- list(rep(NA, length(dateList)))
     results_metab_DN.lower <- list(rep(NA, length(dateList)))
     results_metab_DN.upper <- list(rep(NA, length(dateList)))
+    # Set start point for modeling - these aren't priors but moving them
+    # will improve readability of the traceplot axis
+    starts <- c(-0.1, 0.1, 7, -2.2)
   }
   i <- 1
   for (i in seq_along(dateList)){
@@ -97,7 +103,7 @@ fit_twostation <-function(data, modType, nbatch = 1e5, gas, n = 0.5,
     #### Run 2-station metabolism modeling function for selected day ########
     # "Start" denotes the initial state of the markov chain for GPP, ER,
     # K, and s, 'start' is not the same an informative prior
-    metab_out <- twostationpostsum(start = c(3.1, -7.1, 7, -2.2),
+    metab_out <- twostationpostsum(start = starts,
                                    modType = modType,
                                    data = data_subset,
                                    z = depth_m,
@@ -107,7 +113,8 @@ fit_twostation <-function(data, modType, nbatch = 1e5, gas, n = 0.5,
                                    upName = upstreamName,
                                    downName = downstreamName,
                                    gas = gas, n = n,
-                                   nbatch = nbatch, scale = 0.3)
+                                   nbatch = nbatch, scale = 0.3,
+                                   eqn = eqn)
 
     #### Add day of modeled data to list ####################################
     results_accept[i] <- metab_out$accept

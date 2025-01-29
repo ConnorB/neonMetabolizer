@@ -28,7 +28,7 @@
 #'
 #' Populate here
 tspost_N2 <- function(MET, tempup, tempdown, n2up, n2down, light, tt, z, nsatup,
-                      nsatdown, K600mean, K600sd, gas, n){
+                      nsatdown, K600mean, K600sd, gas, n, eqn){
   # Assign the parameters we solve for to easy to understand values
   NConsume <- MET[1]
   DN <- MET[2]
@@ -45,39 +45,57 @@ tspost_N2 <- function(MET, tempup, tempdown, n2up, n2down, light, tt, z, nsatup,
 
   metab <- vector(mode = "numeric", length = length(n2up)) #create empty vector
 
-  # Solving for downstream N2 at each interval. It references other functions:
-  # Kcor converts K600 to KO2 for a given temperature & gas type.
-  for (i in 1:length(n2up)){
-    # (this function from nifong et al )
-    metab[i] <-
-      (n2up[i] + (
-        (NConsume/z) *
-          ( sum(light[i:(i+lag)]) / sum(light) )
+  # Solve for downstream N2 at each interval
+  if(eqn == "Nifong_et_al_2020"){
+    for (i in 1:length(n2up)){
+      # (this function from nifong et al )
+      metab[i] <-
+        (n2up[i] + (
+          (NConsume/z) *
+            ( sum(light[i:(i+lag)]) / sum(light) )
         ) + DN * tt/z +
-         (
-           Kcor(tempup[i], K600mean, gas = gas, n = n)
-           ) * tt * (
-             nsatup[i] - n2up[i] + nsatdown[i]
-             ) / 2
-       ) /
-      (
-        1 + Kcor(tempup[i], K600mean, gas = gas, n = n) * tt / 2
+          (
+            Kcor(tempup[i], K600mean, gas = gas, n = n)
+          ) * tt * (
+            nsatup[i] - n2up[i] + nsatdown[i]
+          ) / 2
+        ) /
+        (
+          1 + Kcor(tempup[i], K600mean, gas = gas, n = n) * tt / 2
         )
+    }
   }
+  if(eqn == "light_independent"){
+    for (i in 1:length(n2up)){
+      # (this function from nifong et al )
+      metab[i] <-
+        (n2up[i] +
+          NConsume * tt/z +
+           DN * tt/z +
+          (
+            Kcor(tempup[i], K600mean, gas = gas, n = n)
+          ) * tt * (
+            nsatup[i] - n2up[i] + nsatdown[i]
+          ) / 2
+        ) /
+        (
+          1 + Kcor(tempup[i], K600mean, gas = gas, n = n) * tt / 2
+        )
+    }
+  }
+
 
   # likelhood is below.  dnorm calculates the probablity density of a normal
   # distribution, note log.
   loglik <- sum(dnorm(n2down, metab, sigma, log=TRUE))
 
   prior <-
-    # Priors for NConsume and DN based on Nifong et al 2020
+    # Priors for NConsume and DN based on Kelly lit review
+    #(dnorm(NConsume, mean = -9.6e-5, sd = 0.30, log=TRUE)) +
+    #(dnorm(DN, mean = 0.07, sd = 0.25, log=TRUE)) +
+    # Priors for NConsume and DN from Nifong et al 2020
     (dnorm(NConsume, mean = -0.1, sd = 5, log=TRUE)) +
     (dnorm(DN, mean = 0.1, sd = 5, log=TRUE)) +
-    # Priors for NConsume and DN based on median N fix in Marcarelli et al 2024
-    # and median Denitrification rates in Marcarelli et al 2024 & LINXII
-   # (dnorm(NConsume, mean = -4.104199e-05, sd = 0.002207237, log=TRUE)) +
-    #(dnorm(DN, mean = 0.01640903, sd = 0.0866865, log=TRUE)) +
-    #(dnorm(K, mean=Kmean, sd=Ksd, log=TRUE)) +
     (dlnorm(K600, meanlog=K600mean, sdlog=K600sd, log=TRUE))
 
   return(loglik + prior)

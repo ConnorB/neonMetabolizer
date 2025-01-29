@@ -21,7 +21,7 @@
 #'
 #' @example Populate here
 twostationpostsum <- function(data, upName, downName, start, z, tt, K600mean, K600sd,
-                              nbatch, scale, modType, gas, n) {
+                              nbatch, scale, modType, gas, n, eqn) {
   # Create list of unique dates in data
   dateList <- unique(data$date)
 
@@ -182,7 +182,8 @@ twostationpostsum <- function(data, upName, downName, start, z, tt, K600mean, K6
                                      nsatdown = nsatdown, z = z,
                                      light = light, tt = tt, K600mean = K600mean,
                                      K600sd = K600sd, gas = gas, n = n,
-                                     debug = TRUE, nspac = 1)
+                                     debug = TRUE, nspac = 1,
+                                     eqn = eqn)
 
             # trying to troubleshoot here
             plot(ts(met.post$batch), main = dateList[i])
