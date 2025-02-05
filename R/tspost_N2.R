@@ -28,7 +28,7 @@
 #'
 #' Populate here
 tspost_N2 <- function(MET, tempup, tempdown, n2up, n2down, light, tt, z, nsatup,
-                      nsatdown, K600mean, K600sd, gas, n, eqn){
+                      nsatdown, K600mean, K600sd, gas, n, eqn, lag){
   # Assign the parameters we solve for to easy to understand values
   NConsume <- MET[1]
   DN <- MET[2]
@@ -37,51 +37,70 @@ tspost_N2 <- function(MET, tempup, tempdown, n2up, n2down, light, tt, z, nsatup,
   # negative standard deviation
   sigma <- exp(MET[4])
 
-  lag <- as.numeric(round(tt/0.0104166667))
-  # If lag is really small (less than the time between sample collections), set lag = 1
-  if(lag < 1){
-    lag <- 1
-  }
-
   metab <- vector(mode = "numeric", length = length(n2up)) #create empty vector
 
   # Solve for downstream N2 at each interval
   if(eqn == "Nifong_et_al_2020"){
     for (i in 1:length(n2up)){
-      # (this function from nifong et al )
-      metab[i] <-
-        (n2up[i] + (
-          (NConsume/z) *
-            ( sum(light[i:(i+lag)]) / sum(light) )
-        ) + DN * tt/z +
-          (
-            Kcor(tempup[i], K600mean, gas = gas, n = n)
-          ) * tt * (
-            nsatup[i] - n2up[i] + nsatdown[i]
-          ) / 2
-        ) /
-        (
-          1 + Kcor(tempup[i], K600mean, gas = gas, n = n) * tt / 2
-        )
+      # (this function from nifong et al 2020)
+      metab[i] <- nifong(i = i, n2up = n2up, NConsume = NConsume, z = z,
+                         light = light, DN = DN, tt = tt, tempup = tempup,
+                         K600mean = K600mean, gas = gas, n = n, nsatup = nsatup,
+                         nsatdown = nsatdown, lag = lag)
     }
   }
   if(eqn == "light_independent"){
     for (i in 1:length(n2up)){
-      # (this function from nifong et al )
-      metab[i] <-
-        (n2up[i] +
-          NConsume * tt/z +
-           DN * tt/z +
-          (
-            Kcor(tempup[i], K600mean, gas = gas, n = n)
-          ) * tt * (
-            nsatup[i] - n2up[i] + nsatdown[i]
-          ) / 2
-        ) /
-        (
-          1 + Kcor(tempup[i], K600mean, gas = gas, n = n) * tt / 2
-        )
+      metab[i] <- lightIndependent(i = i, n2up = n2up, NConsume = NConsume, z = z,
+                                   DN = DN, tt = tt, tempup = tempup,
+                                   K600mean = K600mean, gas = gas, n = n,
+                                   nsatup = nsatup,
+                                   nsatdown = nsatdown)
     }
+  }
+  if(grepl(pattern = "blende.+", eqn)){
+    # Assign the parameters we solve for to easy to understand values
+    NOther <- MET[1]
+    NFix <- MET[2]
+    DN <- MET[3]
+    #K600 <- MET[4]
+    sigma <- exp(MET[4])
+
+    if(eqn == "blended1"){
+      for (i in 1:length(n2up)){
+        metab[i] <- blended1(i = i, n2up = n2up, NOther = NOther,
+                            NFix = NFix, z = z, light = light,
+                            DN = DN, tt = tt, tempup = tempup,
+                            K600mean = K600mean, gas = gas, n = n,
+                            nsatup = nsatup,
+                            nsatdown = nsatdown, lag = lag)
+      }
+    }
+
+    if(eqn == "blended2"){
+      for (i in 1:length(n2up)){
+        metab[i] <- blended2(i = i, n2up = n2up, NOther = NOther,
+                            NFix = NFix, z = z, light = light,
+                            DN = DN, tt = tt, tempup = tempup,
+                            K600mean = K600mean, gas = gas, n = n,
+                            nsatup = nsatup,
+                            nsatdown = nsatdown, lag = lag)
+      }
+    }
+
+      if(eqn == "blended3"){
+        K600 <- MET[4]
+        sigma <- exp(MET[4])
+
+        for (i in 1:length(n2up)){
+          metab[i] <- blended1(i = i, n2up = n2up, NOther = NOther,
+                               NFix = NFix, z = z, light = light,
+                               DN = DN, tt = tt, tempup = tempup,
+                               K600mean = K600mean, gas = gas, n = n,
+                               nsatup = nsatup,
+                               nsatdown = nsatdown, lag = lag)
+        }
+      }
   }
 
 
@@ -89,14 +108,32 @@ tspost_N2 <- function(MET, tempup, tempdown, n2up, n2down, light, tt, z, nsatup,
   # distribution, note log.
   loglik <- sum(dnorm(n2down, metab, sigma, log=TRUE))
 
-  prior <-
-    # Priors for NConsume and DN based on Kelly lit review
-    #(dnorm(NConsume, mean = -9.6e-5, sd = 0.30, log=TRUE)) +
-    #(dnorm(DN, mean = 0.07, sd = 0.25, log=TRUE)) +
-    # Priors for NConsume and DN from Nifong et al 2020
-    (dnorm(NConsume, mean = -0.1, sd = 5, log=TRUE)) +
-    (dnorm(DN, mean = 0.1, sd = 5, log=TRUE)) +
-    (dlnorm(K600, meanlog=K600mean, sdlog=K600sd, log=TRUE))
+  if(eqn %in% c("Nifong_et_al_2020", "light_independent")){
+    prior <-
+      # Priors for NConsume and DN based on Kelly lit review
+      (dnorm(NConsume, mean = -9.6e-5, sd = 0.30, log=TRUE)) +
+      (dnorm(DN, mean = 0.07, sd = 0.25, log=TRUE)) +
+      # Priors for NConsume and DN from Nifong et al 2020
+      #(dnorm(NConsume, mean = -0.1, sd = 5, log=TRUE)) +
+      #(dnorm(DN, mean = 0.1, sd = 5, log=TRUE)) +
+      (dlnorm(K600, meanlog=K600mean, sdlog=K600sd, log=TRUE))
+  }
+  if(grepl(pattern = "blended[12]", eqn)){
+    prior <-
+      # Priors for NConsume and DN from Nifong et al 2020
+      (dnorm(NOther, mean = -0.1, sd = 5, log=TRUE)) +
+      (dnorm(NFix, mean = -0.1, sd = 5, log=TRUE)) +
+      (dlnorm(DN, meanlog = 0.1, sdlog = 5, log=TRUE)) #+
+      #(dlnorm(K600, meanlog=K600mean, sdlog=K600sd, log=TRUE))
+  }
+  if(eqn == "blended3"){
+    prior <-
+      # Priors for NConsume and DN from Nifong et al 2020
+      (dnorm(NOther, mean = -0.1, sd = 5, log=TRUE)) +
+      (dnorm(NFix, mean = -0.1, sd = 5, log=TRUE)) +
+      (dlnorm(DN, meanlog = 0.1, sdlog = 5, log=TRUE)) +
+      (dlnorm(K600, meanlog=K600mean, sdlog=K600sd, log=TRUE))
+  }
 
   return(loglik + prior)
 }

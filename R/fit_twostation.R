@@ -47,15 +47,29 @@ fit_twostation <-function(data, modType, nbatch = 1e5, gas, n = 0.5,
     starts <- c(3.1, -7.1, 7, -2.2)
   }
   if(gas == "N2"){
-    results_metab_NConsume <- list(rep(NA, length(dateList)))
-    results_metab_NConsume.lower <- list(rep(NA, length(dateList)))
-    results_metab_NConsume.upper <- list(rep(NA, length(dateList)))
     results_metab_DN <- list(rep(NA, length(dateList)))
     results_metab_DN.lower <- list(rep(NA, length(dateList)))
     results_metab_DN.upper <- list(rep(NA, length(dateList)))
     # Set start point for modeling - these aren't priors but moving them
     # will improve readability of the traceplot axis
     starts <- c(-0.1, 0.1, 7, -2.2)
+    if(!grepl(pattern = "blende.+", eqn)){
+      results_metab_NConsume <- list(rep(NA, length(dateList)))
+      results_metab_NConsume.lower <- list(rep(NA, length(dateList)))
+      results_metab_NConsume.upper <- list(rep(NA, length(dateList)))
+    }
+    if(grepl(pattern = "blende.+", eqn)){
+      results_metab_NOther <- list(rep(NA, length(dateList)))
+      results_metab_NOther.lower <- list(rep(NA, length(dateList)))
+      results_metab_NOther.upper <- list(rep(NA, length(dateList)))
+      results_metab_NFix <- list(rep(NA, length(dateList)))
+      results_metab_NFix.lower <- list(rep(NA, length(dateList)))
+      results_metab_NFix.upper <- list(rep(NA, length(dateList)))
+      starts <- c(-0.1, -0.1, 0.1, -2.2)
+    }
+    if(eqn == "blended3"){
+      starts <- c(-0.1, -0.1, 0.1, 7, -2.2)
+    }
   }
   i <- 1
   for (i in seq_along(dateList)){
@@ -119,23 +133,42 @@ fit_twostation <-function(data, modType, nbatch = 1e5, gas, n = 0.5,
     #### Add day of modeled data to list ####################################
     results_accept[i] <- metab_out$accept
     results_metab_date[i] <- metab_out$pred.metab$date
-    results_metab_K600[i] <- metab_out$pred.metab$K600
-    results_metab_K600.lower[i] <- metab_out$pred.metab$K600.lower
-    results_metab_K600.upper[i] <- metab_out$pred.metab$K600.upper
     results_metab_s[i] <- metab_out$pred.metab$s
     results_metab_s.lower[i] <- metab_out$pred.metab$s.lower
     results_metab_s.upper[i] <- metab_out$pred.metab$s.upper
     results_warnings[i] <- NA
 
     if(gas == "N2"){
-      results_metab_NConsume[i] <- metab_out$pred.metab$NConsume
-      results_metab_NConsume.lower[i] <- metab_out$pred.metab$NConsume.lower
-      results_metab_NConsume.upper[i] <- metab_out$pred.metab$NConsume.upper
-      results_metab_DN[i] <-  metab_out$pred.metab$DN
+      results_metab_DN[i] <- metab_out$pred.metab$DN
       results_metab_DN.lower[i] <- metab_out$pred.metab$DN.lower
       results_metab_DN.upper[i] <- metab_out$pred.metab$DN.upper
+
+      if(!grepl(pattern = "blende.+", eqn)){
+        results_metab_NConsume[i] <- metab_out$pred.metab$NConsume
+        results_metab_NConsume.lower[i] <- metab_out$pred.metab$NConsume.lower
+        results_metab_NConsume.upper[i] <- metab_out$pred.metab$NConsume.upper
+        results_metab_K600[i] <- metab_out$pred.metab$K600
+        results_metab_K600.lower[i] <- metab_out$pred.metab$K600.lower
+        results_metab_K600.upper[i] <- metab_out$pred.metab$K600.upper
+      }
+      if(grepl(pattern = "blende.+", eqn)){
+        results_metab_NOther[i] <- metab_out$pred.metab$NOther
+        results_metab_NOther.lower[i] <- metab_out$pred.metab$NOther.lower
+        results_metab_NOther.upper[i] <- metab_out$pred.metab$NOther.upper
+        results_metab_NFix[i] <- metab_out$pred.metab$NFix
+        results_metab_NFix.lower[i] <- metab_out$pred.metab$NFix.lower
+        results_metab_NFix.upper[i] <- metab_out$pred.metab$NFix.upper
+      }
+      if(eqn == "blended3"){
+        results_metab_K600[i] <- metab_out$pred.metab$K600
+        results_metab_K600.lower[i] <- metab_out$pred.metab$K600.lower
+        results_metab_K600.upper[i] <- metab_out$pred.metab$K600.upper
+      }
     }
     if(gas == "O2"){
+      results_metab_K600[i] <- metab_out$pred.metab$K600
+      results_metab_K600.lower[i] <- metab_out$pred.metab$K600.lower
+      results_metab_K600.upper[i] <- metab_out$pred.metab$K600.upper
       results_metab_GPP[i] <- metab_out$pred.metab$GPP
       results_metab_GPP.lower[i] <- metab_out$pred.metab$GPP.lower
       results_metab_GPP.upper[i] <- metab_out$pred.metab$GPP.upper
@@ -150,22 +183,63 @@ fit_twostation <-function(data, modType, nbatch = 1e5, gas, n = 0.5,
   } # Exit loop for modeling the modelBlock
 
   if(gas == "N2"){
-    results <- data.frame(date = as.Date(unlist(results_metab_date),
-                                         origin = "1970-01-01"),
-                          NConsume = unlist(results_metab_NConsume),
-                          NConsume.lower = unlist(results_metab_NConsume.lower),
-                          NConsume.upper = unlist(results_metab_NConsume.upper),
-                          DN = unlist(results_metab_DN),
-                          DN.lower = unlist(results_metab_DN.lower),
-                          DN.upper = unlist(results_metab_DN.upper),
-                          K600 = unlist(results_metab_K600),
-                          K600.lower = unlist(results_metab_K600.lower),
-                          K600.upper = unlist(results_metab_K600.upper),
-                          s = unlist(results_metab_s),
-                          s.lower = unlist(results_metab_s.lower),
-                          s.upper = unlist(results_metab_s.upper),
-                          warnings = unlist(results_warnings)
-    )
+    if(!grepl(pattern = "blende.+", eqn)) {
+      results <- data.frame(date = as.Date(unlist(results_metab_date),
+                                           origin = "1970-01-01"),
+                            NConsume = unlist(results_metab_NConsume),
+                            NConsume.lower = unlist(results_metab_NConsume.lower),
+                            NConsume.upper = unlist(results_metab_NConsume.upper),
+                            DN = unlist(results_metab_DN),
+                            DN.lower = unlist(results_metab_DN.lower),
+                            DN.upper = unlist(results_metab_DN.upper),
+                            K600 = unlist(results_metab_K600),
+                            K600.lower = unlist(results_metab_K600.lower),
+                            K600.upper = unlist(results_metab_K600.upper),
+                            s = unlist(results_metab_s),
+                            s.lower = unlist(results_metab_s.lower),
+                            s.upper = unlist(results_metab_s.upper),
+                            warnings = unlist(results_warnings))
+    }
+    if(grepl(pattern = "blended[12]", eqn)){
+      results <- data.frame(date = as.Date(unlist(results_metab_date),
+                                           origin = "1970-01-01"),
+                            NOther = unlist(results_metab_NOther),
+                            NOther.lower = unlist(results_metab_NOther.lower),
+                            NOther.upper = unlist(results_metab_NOther.upper),
+                            NFix = unlist(results_metab_NFix),
+                            NFix.lower = unlist(results_metab_NFix.lower),
+                            NFix.upper = unlist(results_metab_NFix.upper),
+                            DN = unlist(results_metab_DN),
+                            DN.lower = unlist(results_metab_DN.lower),
+                            DN.upper = unlist(results_metab_DN.upper),
+                            #K600 = unlist(results_metab_K600),
+                            #K600.lower = unlist(results_metab_K600.lower),
+                            #K600.upper = unlist(results_metab_K600.upper),
+                            s = unlist(results_metab_s),
+                            s.lower = unlist(results_metab_s.lower),
+                            s.upper = unlist(results_metab_s.upper),
+                            warnings = unlist(results_warnings))
+    }
+    if(eqn == "blended3"){
+      results <- data.frame(date = as.Date(unlist(results_metab_date),
+                                           origin = "1970-01-01"),
+                            NOther = unlist(results_metab_NOther),
+                            NOther.lower = unlist(results_metab_NOther.lower),
+                            NOther.upper = unlist(results_metab_NOther.upper),
+                            NFix = unlist(results_metab_NFix),
+                            NFix.lower = unlist(results_metab_NFix.lower),
+                            NFix.upper = unlist(results_metab_NFix.upper),
+                            DN = unlist(results_metab_DN),
+                            DN.lower = unlist(results_metab_DN.lower),
+                            DN.upper = unlist(results_metab_DN.upper),
+                            K600 = unlist(results_metab_K600),
+                            K600.lower = unlist(results_metab_K600.lower),
+                            K600.upper = unlist(results_metab_K600.upper),
+                            s = unlist(results_metab_s),
+                            s.lower = unlist(results_metab_s.lower),
+                            s.upper = unlist(results_metab_s.upper),
+                            warnings = unlist(results_warnings))
+    }
   }
   if(gas == "O2"){
     # Combine metabolism results dataframe

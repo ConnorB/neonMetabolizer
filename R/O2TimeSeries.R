@@ -23,37 +23,12 @@
 #'
 #' Populate here
 #'
-O2TimeSeries <- function(GPP, ER, data, K600mean, z, tt, upName, downName, gas, n) {
-  # Ungroup data
-  data <- data %>% dplyr::ungroup()
-
-  #number of 15 min readings bewteen up and down probe corresponding
-  # to travel time tt
-  lag <- as.numeric(round(tt/0.0104166667))
-
-  # trim the ends of the oxy and temp data by the lag so that oxydown[1]
-  # is the value that is the travel time later than oxy up. The below
-  # calls are designed to work with our data structure.
-
-  # Seperate data into upstream and downstream sections
-  updata <- data[data$horizontalPosition == upName,]
-  downdata <- data[data$horizontalPosition == downName,]
-
-  tempup <- updata$WaterTemp_C[1:as.numeric(length(updata$WaterTemp_C)-lag)] # trim the end by the lag
-  tempdown <- downdata$WaterTemp_C[(1+lag):length(downdata$WaterTemp_C)]
-
-  oxyup <- updata$DO_mgL[1:as.numeric(length(updata$WaterTemp_C)-lag)]
-  # define osat
-  osat <- updata$DOsat_mgL[1:as.numeric(length(updata$WaterTemp_C)-lag)]
-  oxydown <- downdata$DO_mgL[(1+lag):length(downdata$WaterTemp_C)]
-
-  timeup <- updata$solarTime[1:(length(updata$WaterTemp_C)-lag)]
-  timedown <- downdata$solarTime[(1+lag):length(downdata$WaterTemp_C)]
-
-  light <- downdata$Light_PAR
-
+O2TimeSeries <- function(GPP, ER, timeup, timedown, oxyup, z, light,
+                         tt, tempup, K600mean, gas, n, osatup, osatdown,
+                         lag, oxydown) {
   # Initialize an empty vector
   modeledO2 <- numeric(length(oxyup))
+
   # Calculate metabolism at each timestep
   for (i in 1:length(oxyup)) {
     # Check if non-NA data on date, if GPP is NA, go to next date in sequence
@@ -61,10 +36,11 @@ O2TimeSeries <- function(GPP, ER, data, K600mean, z, tt, upName, downName, gas, 
       # If there is no GPP estimate, move on to next row in dataframe
       next
     } else{
-      modeledO2[i] <- (oxyup[i] + ((GPP/z)*(sum(light[i:(i+lag)]) / sum(light))) +
-                         ER*tt/z +
-                         (Kcor(tempup[i],K600mean, gas = gas, n = n))*tt*(osat[i] - oxyup[i] +  osat[i])/2) /
-        (1 + Kcor(tempup[i],K600mean, gas = gas, n = n)*tt/2)
+      modeledO2[i] <- O2_twoStation(i = i, oxyup = oxyup, GPP = GPP, z = z,
+                                    light = light, ER = ER, tt = tt,
+                                    tempup = tempup, K600mean = K600mean,
+                                    gas = gas, n = n, osatup = osatup,
+                                    osatdown = osatdown, lag = lag)
     } # close else
   }
 
