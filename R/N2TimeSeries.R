@@ -23,7 +23,7 @@
 #'
 #' Populate here
 #'
-N2TimeSeries <- function(NConsume, DN, timeup, timedown,
+N2TimeSeries <- function(NConsume = NULL, DN, timeup, timedown,
                          NFix = NULL, NOther = NULL,
                          n2up, z, light, tt, tempup, K600mean, gas, n,
                          nsatup, nsatdown, lag, n2down, eqn) {
@@ -51,6 +51,15 @@ N2TimeSeries <- function(NConsume, DN, timeup, timedown,
         for (i in 1:length(n2up)){
           modeledN2[i] <- lightIndependent(i = i, n2up = n2up,
                                            NConsume = NConsume, z = z,
+                                           DN = DN, tt = tt, tempup = tempup,
+                                           K600mean = K600mean, gas = gas,
+                                           n = n, nsatup = nsatup,
+                                           nsatdown = nsatdown)
+        }
+      }
+      if(eqn == "Reisinger_et_al_2016"){
+        for (i in 1:length(n2up)){
+          modeledN2[i] <- reisinger(i = i, n2up = n2up, z = z,
                                            DN = DN, tt = tt, tempup = tempup,
                                            K600mean = K600mean, gas = gas,
                                            n = n, nsatup = nsatup,

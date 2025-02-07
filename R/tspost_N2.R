@@ -49,6 +49,19 @@ tspost_N2 <- function(MET, tempup, tempdown, n2up, n2down, light, tt, z, nsatup,
                          nsatdown = nsatdown, lag = lag)
     }
   }
+  if(eqn == "Reisinger_et_al_2016"){
+    for (i in 1:length(n2up)){
+      DN <- MET[1]
+      K600 <- MET[2]
+      sigma <- exp(MET[3])
+
+      # (this function from reisinger et al 2016, just modified to be two station)
+      metab[i] <- reisinger(i = i, n2up = n2up, z = z,
+                            DN = DN, tt = tt, tempup = tempup,
+                            K600mean = K600mean, gas = gas, n = n, nsatup = nsatup,
+                            nsatdown = nsatdown, lag = lag)
+    }
+  }
   if(eqn == "light_independent"){
     for (i in 1:length(n2up)){
       metab[i] <- lightIndependent(i = i, n2up = n2up, NConsume = NConsume, z = z,
@@ -131,6 +144,12 @@ tspost_N2 <- function(MET, tempup, tempdown, n2up, n2down, light, tt, z, nsatup,
       # Priors for NConsume and DN from Nifong et al 2020
       (dnorm(NOther, mean = -0.1, sd = 5, log=TRUE)) +
       (dnorm(NFix, mean = -0.1, sd = 5, log=TRUE)) +
+      (dlnorm(DN, meanlog = 0.1, sdlog = 5, log=TRUE)) +
+      (dlnorm(K600, meanlog=K600mean, sdlog=K600sd, log=TRUE))
+  }
+  if(eqn == "Reisinger_et_al_2016"){
+    prior <-
+      # Reisinger used a uniform prior, but I don't want to do that
       (dlnorm(DN, meanlog = 0.1, sdlog = 5, log=TRUE)) +
       (dlnorm(K600, meanlog=K600mean, sdlog=K600sd, log=TRUE))
   }
