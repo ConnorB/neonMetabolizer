@@ -52,12 +52,14 @@ twostationpostsum <- function(data, upName, downName, start, z, tt, K600mean, K6
     DN.upper <- vector(mode = "numeric", length = length(unique(data$date)))
 
     if(grepl(pattern = "blende.+", eqn)){
-      NOther <- vector(mode = "numeric", length = length(unique(data$date)))
-      NOther.lower <- vector(mode = "numeric", length = length(unique(data$date)))
-      NOther.upper <- vector(mode = "numeric", length = length(unique(data$date)))
       NFix <- vector(mode = "numeric", length = length(unique(data$date)))
       NFix.lower <- vector(mode = "numeric", length = length(unique(data$date)))
       NFix.upper <- vector(mode = "numeric", length = length(unique(data$date)))
+      if(eqn == "blended1" | eqn == "blended3"){
+        NOther <- vector(mode = "numeric", length = length(unique(data$date)))
+        NOther.lower <- vector(mode = "numeric", length = length(unique(data$date)))
+        NOther.upper <- vector(mode = "numeric", length = length(unique(data$date)))
+      }
     }
   }
 
@@ -115,12 +117,14 @@ twostationpostsum <- function(data, upName, downName, start, z, tt, K600mean, K6
           NConsume.upper[i] <- NA
         }
         if(grepl(pattern = "blende.+", eqn)){
-          NOther[i] <- NA
-          NOther.lower[i] <- NA
-          NOther.upper[i] <- NA
           NFix[i] <- NA
           NFix.lower[i] <- NA
           NFix.upper[i] <- NA
+          if(eqn == "blended1" | eqn == "blended3"){
+            NOther[i] <- NA
+            NOther.lower[i] <- NA
+            NOther.upper[i] <- NA
+          }
         }
       }
       next
@@ -210,6 +214,39 @@ twostationpostsum <- function(data, upName, downName, start, z, tt, K600mean, K6
                                      eqn = eqn, lag = lag)
 
             if(!grepl(pattern = "blende.+", eqn)){
+              if(eqn == "Nifong_fixedK"){
+                plot(ts(met.post$batch,
+                        names = c("NConsume", "DN", "s")),
+                     main = dateList[i])
+
+                # Calculate overall estimates for each day
+                nconsumer <- quantile(met.post$batch[(2000:nbatch),1],
+                                      c(0.025, 0.5, 0.975))
+                dnr <- quantile(met.post$batch[(2000:nbatch),2],
+                                c(0.025, 0.5, 0.975))
+                sr <- quantile(met.post$batch[(2000:nbatch),3],
+                               c(0.025, 0.5, 0.975))
+
+                # Add results to vectors
+                #date[i] <- ymd(unique(data$date)[i])
+                NConsume[i] <- nconsumer[2]
+                NConsume.lower[i] <- nconsumer[1]
+                NConsume.upper[i] <- nconsumer[3]
+                DN[i] <- dnr[2]
+                DN.lower[i] <- dnr[1]
+                DN.upper[i] <- dnr[3]
+                s[i] <- sr[2]
+                s.lower[i] <- sr[1]
+                s.upper[i] <- sr[3]
+                accept[i] <- met.post$accept
+
+                # Create dataframe of predicted metabolism values
+                pred.metab <- data.frame(date = dateList, NConsume, NConsume.lower,
+                                         NConsume.upper, DN, DN.lower,
+                                         DN.upper, s,
+                                         s.lower, s.upper)
+              }
+
               if(eqn == "Reisinger_et_al_2016"){
                 # trying to troubleshoot here
                 plot(ts(met.post$batch,
@@ -240,7 +277,9 @@ twostationpostsum <- function(data, upName, downName, start, z, tt, K600mean, K6
                 pred.metab <- data.frame(date = dateList, DN, DN.lower,
                                          DN.upper, K600, K600.lower, K600.upper,
                                          s, s.lower, s.upper)
-              } else{
+              }
+
+              if(eqn %in% c("Nifong_et_al_2020", "light_independent")){
                 # trying to troubleshoot here
                 plot(ts(met.post$batch,
                         names = c("NConsume", "DN", "K600", "s")),
@@ -279,7 +318,7 @@ twostationpostsum <- function(data, upName, downName, start, z, tt, K600mean, K6
                                          s.lower, s.upper)
               }
             }
-            if(grepl(pattern = "blended[12]", eqn)){
+            if(grepl(pattern = "blended[13]", eqn)){
               plot(ts(met.post$batch,
                       names = c("NOther", "NFix", "DN", #"K600",
                                 "s")),
@@ -324,48 +363,43 @@ twostationpostsum <- function(data, upName, downName, start, z, tt, K600mean, K6
                                        s,
                                        s.lower, s.upper)
             } # Close blended
-            if(eqn == "blended3"){
+            if(eqn == "blended2"){
               plot(ts(met.post$batch,
-                      names = c("NOther", "NFix", "DN", "K600",
+                      names = c("NConsume", "NFix", "DN",
                                 "s")),
                    main = dateList[i])
 
               # Calculate overall estimates for each day
-              notherr <- quantile(met.post$batch[(2000:nbatch), 1],
-                                  c(0.025, 0.5, 0.975))
+              nconsumer <- quantile(met.post$batch[(2000:nbatch),1],
+                                    c(0.025, 0.5, 0.975))
               nfixr <- quantile(met.post$batch[(2000:nbatch), 2],
                                 c(0.025, 0.5, 0.975))
               dnr <- quantile(met.post$batch[(2000:nbatch), 3],
                               c(0.025, 0.5, 0.975))
-              K600r <- quantile(met.post$batch[(2000:nbatch), 4],
-                               c(0.025, 0.5, 0.975))
               sr <- quantile(met.post$batch[(2000:nbatch), 4],
                              c(0.025, 0.5, 0.975))
 
               # Add results to vectors
               #date[i] <- ymd(unique(data$date)[i])
-              NOther[i] <- notherr[2]
-              NOther.lower[i] <- notherr[1]
-              NOther.upper[i] <- notherr[3]
+              NConsume[i] <- nconsumer[2]
+              NConsume.lower[i] <- nconsumer[1]
+              NConsume.upper[i] <- nconsumer[3]
               NFix[i] <- nfixr[2]
               NFix.lower[i] <- nfixr[1]
               NFix.upper[i] <- nfixr[3]
               DN[i] <- dnr[2]
               DN.lower[i] <- dnr[1]
               DN.upper[i] <- dnr[3]
-              K600[i] <- K600r[2]
-              K600.lower[i] <- K600r[1]
-              K600.upper[i] <- K600r[3]
               s[i] <- sr[2]
               s.lower[i] <- sr[1]
               s.upper[i] <- sr[3]
               accept[i] <- met.post$accept # log likelihood plus priors, should be about 0.2
 
               # Create dataframe of predicted metabolism values
-              pred.metab <- data.frame(date = dateList, NOther, NOther.lower,
-                                       NOther.upper, NFix, NFix.lower, NFix.upper,
+              pred.metab <- data.frame(date = dateList, NConsume, NConsume.lower,
+                                       NConsume.upper, NFix, NFix.lower, NFix.upper,
                                        DN, DN.lower,
-                                       DN.upper, K600, K600.lower, K600.upper,
+                                       DN.upper,
                                        s,
                                        s.lower, s.upper)
             } # Close blended3
@@ -377,35 +411,59 @@ twostationpostsum <- function(data, upName, downName, start, z, tt, K600mean, K6
   # Call O2TimeSeries function to return modeled O2 values based on median GPP and ER
   # modeling results
   if(gas == "O2"){
-    modeledGas <- O2TimeSeries(GPP = pred.metab$GPP, ER = pred.metab$ER,
+    modeledGas <- O2TimeSeries(GPP = pred.metab$GPP,
+                               ER = pred.metab$ER,
+                               K600mean = pred.metab$K600,
                                timeup = timeup, timedown = timedown,
                                oxyup = oxyup, z = z,
                                light = light, tt = tt,
-                               tempup = tempup, K600mean = K600mean,
+                               tempup = tempup,
                                gas = gas, n = n, osatup = osatup,
                                osatdown = osatdown, lag = lag,
                                oxydown = oxydown)
   }
   if(gas == "N2"){
-    if(!grepl(pattern = "blende.+", eqn)){
-      if(eqn == "Reisinger_et_al_2016"){
-        modeledGas <- N2TimeSeries(DN = pred.metab$DN,
-                                   timeup = timeup, timedown = timedown,
-                                   n2up = n2up, z = z, light = light, tt = tt,
-                                   tempup = tempup, K600mean = K600mean, gas = gas,
-                                   n = n, nsatup = nsatup, nsatdown = nsatdown,
-                                   lag = lag, n2down = n2down, eqn = eqn)
-      } else{
-        modeledGas <- N2TimeSeries(NConsume = pred.metab$NConsume, DN = pred.metab$DN,
-                                   timeup = timeup, timedown = timedown,
-                                   n2up = n2up, z = z, light = light, tt = tt,
-                                   tempup = tempup, K600mean = K600mean, gas = gas,
-                                   n = n, nsatup = nsatup, nsatdown = nsatdown,
-                                   lag = lag, n2down = n2down, eqn = eqn)
-      }
+    if(eqn == "Reisinger_et_al_2016"){
+      modeledGas <- N2TimeSeries(DN = pred.metab$DN,
+                                 K600mean = pred.metab$K600,
+                                 timeup = timeup, timedown = timedown,
+                                 n2up = n2up, z = z, light = light, tt = tt,
+                                 tempup = tempup, gas = gas,
+                                 n = n, nsatup = nsatup, nsatdown = nsatdown,
+                                 lag = lag, n2down = n2down, eqn = eqn)
     }
-    if(grepl(pattern = "blende.+", eqn)){
+    if(eqn %in% c("Nifong_et_al_2020", "light_independent")){
+      modeledGas <- N2TimeSeries(NConsume = pred.metab$NConsume,
+                                 DN = pred.metab$DN,
+                                 K600mean = pred.metab$K600,
+                                 timeup = timeup, timedown = timedown,
+                                 n2up = n2up, z = z, light = light, tt = tt,
+                                 tempup = tempup,  gas = gas,
+                                 n = n, nsatup = nsatup, nsatdown = nsatdown,
+                                 lag = lag, n2down = n2down, eqn = eqn)
+    }
+    if(eqn == "Nifong_fixedK"){
+      modeledGas <- N2TimeSeries(NConsume = pred.metab$NConsume,
+                                 DN = pred.metab$DN,
+                                 K600mean = K600mean,
+                                 timeup = timeup, timedown = timedown,
+                                 n2up = n2up, z = z, light = light, tt = tt,
+                                 tempup = tempup, gas = gas,
+                                 n = n, nsatup = nsatup, nsatdown = nsatdown,
+                                 lag = lag, n2down = n2down, eqn = eqn)
+    }
+    if(grepl(pattern = "blended[13]", eqn)){
       modeledGas <- N2TimeSeries(NOther = pred.metab$NOther,
+                                 NFix = pred.metab$NFix,
+                                 DN = pred.metab$DN,
+                                 timeup = timeup, timedown = timedown,
+                                 n2up = n2up, z = z, light = light, tt = tt,
+                                 tempup = tempup, K600mean = K600mean, gas = gas,
+                                 n = n, nsatup = nsatup, nsatdown = nsatdown,
+                                 lag = lag, n2down = n2down, eqn = eqn)
+    }
+    if(eqn == "blended2"){
+      modeledGas <- N2TimeSeries(NConsume = pred.metab$NConsume,
                                  NFix = pred.metab$NFix,
                                  DN = pred.metab$DN,
                                  timeup = timeup, timedown = timedown,

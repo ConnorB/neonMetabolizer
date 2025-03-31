@@ -38,7 +38,7 @@ N2TimeSeries <- function(NConsume = NULL, DN, timeup, timedown,
       # If there is no GPP estimate, move on to next row in dataframe
       next
     } else{
-      if(eqn == "Nifong_et_al_2020"){
+      if(eqn == "Nifong_et_al_2020" | eqn == "Nifong_fixedK"){
         for (i in 1:length(n2up)){
           # (this function from nifong et al 2020)
           modeledN2[i] <- nifong(i = i, n2up = n2up, NConsume = NConsume, z = z,
@@ -79,7 +79,7 @@ N2TimeSeries <- function(NConsume = NULL, DN, timeup, timedown,
       if(eqn == "blended2"){
         for (i in 1:length(n2up)){
           modeledN2[i] <- blended2(i = i, n2up = n2up, light = light,
-                                   NOther = NOther, NFix = NFix, z = z,
+                                   NConsume = NConsume, NFix = NFix, z = z,
                                    DN = DN, tt = tt, tempup = tempup,
                                    K600mean = K600mean, gas = gas,
                                    n = n, nsatup = nsatup,

@@ -1,4 +1,4 @@
-#' \code{BlendedEqn2}
+#' \code{BlendedEqn3}
 #'
 #' Internal function.
 #'
@@ -8,12 +8,12 @@
 #'
 #' description here
 #'
-blended2 <- function(i, n2up, NConsume, NFix, z, light, DN, tt, tempup, K600mean, gas,
+blended3 <- function(i, n2up, NOther, NFix, z, light, DN, tt, tempup, K600mean, gas,
                      n, nsatup, nsatdown, lag){
   (n2up[i] +
-     (NConsume - NFix) * tt/z +
+     NOther * tt/z +
      (
-       (NFix / z) *
+       ((NFix + NOther) / z) *
          (sum(light[i:(i+lag)]) / sum(light) )
      ) +
      DN * tt/z +

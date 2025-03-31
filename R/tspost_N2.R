@@ -49,6 +49,19 @@ tspost_N2 <- function(MET, tempup, tempdown, n2up, n2down, light, tt, z, nsatup,
                          nsatdown = nsatdown, lag = lag)
     }
   }
+  if(eqn == "Nifong_fixedK"){
+    for (i in 1:length(n2up)){
+      NConsume <- MET[1]
+      DN <- MET[2]
+      sigma <- exp(MET[3])
+
+      # (this function from nifong et al 2020)
+      metab[i] <- nifong(i = i, n2up = n2up, NConsume = NConsume, z = z,
+                         light = light, DN = DN, tt = tt, tempup = tempup,
+                         K600mean = K600mean, gas = gas, n = n, nsatup = nsatup,
+                         nsatdown = nsatdown, lag = lag)
+    }
+  }
   if(eqn == "Reisinger_et_al_2016"){
     for (i in 1:length(n2up)){
       DN <- MET[1]
@@ -71,7 +84,7 @@ tspost_N2 <- function(MET, tempup, tempdown, n2up, n2down, light, tt, z, nsatup,
                                    nsatdown = nsatdown)
     }
   }
-  if(grepl(pattern = "blende.+", eqn)){
+  if(grepl(pattern = "blended[13]", eqn)){
     # Assign the parameters we solve for to easy to understand values
     NOther <- MET[1]
     NFix <- MET[2]
@@ -81,18 +94,33 @@ tspost_N2 <- function(MET, tempup, tempdown, n2up, n2down, light, tt, z, nsatup,
 
     if(eqn == "blended1"){
       for (i in 1:length(n2up)){
-        metab[i] <- blended1(i = i, n2up = n2up, NOther = NOther,
-                            NFix = NFix, z = z, light = light,
-                            DN = DN, tt = tt, tempup = tempup,
-                            K600mean = K600mean, gas = gas, n = n,
-                            nsatup = nsatup,
-                            nsatdown = nsatdown, lag = lag)
+      metab[i] <- blended1(i = i, n2up = n2up, NOther = NOther,
+                          NFix = NFix, z = z, light = light,
+                          DN = DN, tt = tt, tempup = tempup,
+                          K600mean = K600mean, gas = gas, n = n,
+                          nsatup = nsatup,
+                          nsatdown = nsatdown, lag = lag)
       }
     }
-
-    if(eqn == "blended2"){
+    if(eqn == "blended3"){
       for (i in 1:length(n2up)){
-        metab[i] <- blended2(i = i, n2up = n2up, NOther = NOther,
+        metab[i] <- blended3(i = i, n2up = n2up, NOther = NOther,
+                             NFix = NFix, z = z, light = light,
+                             DN = DN, tt = tt, tempup = tempup,
+                             K600mean = K600mean, gas = gas, n = n,
+                             nsatup = nsatup,
+                             nsatdown = nsatdown, lag = lag)
+      }
+    }
+  }
+  if(eqn == "blended2"){
+    NConsume <- MET[1]
+    NFix <- MET[2]
+    DN <- MET[3]
+    sigma <- exp(MET[4])
+
+    for (i in 1:length(n2up)){
+      metab[i] <- blended2(i = i, n2up = n2up, NConsume = NConsume,
                             NFix = NFix, z = z, light = light,
                             DN = DN, tt = tt, tempup = tempup,
                             K600mean = K600mean, gas = gas, n = n,
@@ -100,23 +128,6 @@ tspost_N2 <- function(MET, tempup, tempdown, n2up, n2down, light, tt, z, nsatup,
                             nsatdown = nsatdown, lag = lag)
       }
     }
-
-      if(eqn == "blended3"){
-        K600 <- MET[4]
-        sigma <- exp(MET[4])
-
-        for (i in 1:length(n2up)){
-          metab[i] <- blended1(i = i, n2up = n2up, NOther = NOther,
-                               NFix = NFix, z = z, light = light,
-                               DN = DN, tt = tt, tempup = tempup,
-                               K600mean = K600mean, gas = gas, n = n,
-                               nsatup = nsatup,
-                               nsatdown = nsatdown, lag = lag)
-        }
-      }
-  }
-
-
   # likelhood is below.  dnorm calculates the probablity density of a normal
   # distribution, note log.
   loglik <- sum(dnorm(n2down, metab, sigma, log=TRUE))
@@ -124,14 +135,20 @@ tspost_N2 <- function(MET, tempup, tempdown, n2up, n2down, light, tt, z, nsatup,
   if(eqn %in% c("Nifong_et_al_2020", "light_independent")){
     prior <-
       # Priors for NConsume and DN based on Kelly lit review
-      (dnorm(NConsume, mean = -9.6e-5, sd = 0.30, log=TRUE)) +
-      (dnorm(DN, mean = 0.07, sd = 0.25, log=TRUE)) +
+      #(dnorm(NConsume, mean = -9.6e-5, sd = 0.30, log=TRUE)) +
+      #(dnorm(DN, mean = 0.07, sd = 0.25, log=TRUE)) +
       # Priors for NConsume and DN from Nifong et al 2020
-      #(dnorm(NConsume, mean = -0.1, sd = 5, log=TRUE)) +
-      #(dnorm(DN, mean = 0.1, sd = 5, log=TRUE)) +
+      (dnorm(NConsume, mean = -0.1, sd = 5, log=TRUE)) +
+      #dnorm(DN, mean = 0.1, sd = 5, log=TRUE))
+      (dlnorm(DN, meanlog = 0.1, sdlog = 5, log=TRUE)) +
       (dlnorm(K600, meanlog=K600mean, sdlog=K600sd, log=TRUE))
   }
-  if(grepl(pattern = "blended[12]", eqn)){
+  if(eqn == "Nifong_fixedK"){
+    prior <-
+      (dnorm(NConsume, mean = -0.1, sd = 5, log=TRUE)) +
+      (dlnorm(DN, meanlog = 0.1, sdlog = 5, log=TRUE))
+  }
+  if(grepl(pattern = "blended[13]", eqn)){
     prior <-
       # Priors for NConsume and DN from Nifong et al 2020
       (dnorm(NOther, mean = -0.1, sd = 5, log=TRUE)) +
@@ -139,17 +156,17 @@ tspost_N2 <- function(MET, tempup, tempdown, n2up, n2down, light, tt, z, nsatup,
       (dlnorm(DN, meanlog = 0.1, sdlog = 5, log=TRUE)) #+
       #(dlnorm(K600, meanlog=K600mean, sdlog=K600sd, log=TRUE))
   }
-  if(eqn == "blended3"){
+  if(eqn == "blended2"){
     prior <-
       # Priors for NConsume and DN from Nifong et al 2020
-      (dnorm(NOther, mean = -0.1, sd = 5, log=TRUE)) +
+      (dnorm(NConsume, mean = -0.1, sd = 5, log=TRUE)) +
       (dnorm(NFix, mean = -0.1, sd = 5, log=TRUE)) +
-      (dlnorm(DN, meanlog = 0.1, sdlog = 5, log=TRUE)) +
-      (dlnorm(K600, meanlog=K600mean, sdlog=K600sd, log=TRUE))
+      (dlnorm(DN, meanlog = 0.1, sdlog = 5, log=TRUE))
   }
   if(eqn == "Reisinger_et_al_2016"){
     prior <-
-      # Reisinger used a uniform prior, but I don't want to do that
+      # Reisinger used a uniform prior, but I don't want to do that.
+      # Use same priors as nifong
       (dlnorm(DN, meanlog = 0.1, sdlog = 5, log=TRUE)) +
       (dlnorm(K600, meanlog=K600mean, sdlog=K600sd, log=TRUE))
   }
