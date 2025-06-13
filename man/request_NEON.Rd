@@ -69,8 +69,6 @@ data <- request_NEON(NEONsites = "HOPB", startdate = "2018-01", enddate = "2018-
 \seealso{
 \url{https://github.com/NEONScience/NEON-utilities/neonUtilities/}
 for details on \code{neonUtilities} package,
-\url{https://github.com/NEONScience/NEON-water-quality/localPressureDO}
-for details on \code{localPressureDO} package,
 \url{https://github.com/NEONScience/NEON-reaeration/reaRate} for details
 on \code{reaRate} package.
 }

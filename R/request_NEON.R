@@ -39,8 +39,6 @@
 #'
 #' @seealso \url{https://github.com/NEONScience/NEON-utilities/neonUtilities/}
 #'    for details on \code{neonUtilities} package,
-#'    \url{https://github.com/NEONScience/NEON-water-quality/localPressureDO}
-#'    for details on \code{localPressureDO} package,
 #'    \url{https://github.com/NEONScience/NEON-reaeration/reaRate} for details
 #'    on \code{reaRate} package.
 #'
@@ -102,8 +100,12 @@ request_NEON <- function(NEONsites, startdate = NA, enddate = NA, APIkey = NA_ch
   ### Nitrate ###
   NO3_data <-
     NO3$NSW_15_minute %>%
-    dplyr::select(siteID, startDateTime, surfWaterNitrateMean) %>%
-    dplyr::mutate(startDateTime = lubridate::with_tz(startDateTime,
+    dplyr::select(siteID, horizontalPosition, startDateTime, surfWaterNitrateMean) %>%
+    dplyr::mutate(horizontalPosition = dplyr::case_when(
+      grepl("^101(\\.|$)", horizontalPosition) ~ "S1",
+      grepl("^102(\\.|$)", horizontalPosition) ~ "S2",
+      TRUE ~ as.character(horizontalPosition)),
+      startDateTime = lubridate::with_tz(startDateTime,
                                                      tz = "UTC")) %>%
     dplyr::rename(DateTime_UTC = startDateTime,
                   Nitrate_uMolL = surfWaterNitrateMean)
@@ -115,9 +117,10 @@ request_NEON <- function(NEONsites, startdate = NA, enddate = NA, APIkey = NA_ch
                   specificConductance, dissolvedOxygen,
                   seaLevelDissolvedOxygenSat,
                   localDissolvedOxygenSat, pH, chlorophyll, turbidity) %>%
-    dplyr::mutate(horizontalPosition = dplyr::recode(horizontalPosition,
-                                                     "101" = "S1",
-                                                     "102" = "S2"),
+    dplyr::mutate(horizontalPosition = dplyr::case_when(
+      grepl("^101(\\.|$)", horizontalPosition) ~ "S1",
+      grepl("^102(\\.|$)", horizontalPosition) ~ "S2",
+      TRUE ~ as.character(horizontalPosition)),
                   startDateTime = lubridate::with_tz(startDateTime,
                                                      tz = "UTC")) %>%
     dplyr::rename(DateTime_UTC = startDateTime, DO_mgL = dissolvedOxygen,
@@ -180,11 +183,13 @@ request_NEON <- function(NEONsites, startdate = NA, enddate = NA, APIkey = NA_ch
     Temp$TSW_5min %>%
     dplyr::select(siteID, horizontalPosition, startDateTime,
                   surfWaterTempMean) %>%
-    dplyr::mutate(horizontalPosition = dplyr::recode(horizontalPosition,
-                                                     "101" = "S1",
-                                                     "102" = "S2"),
-                  startDateTime = lubridate::with_tz(startDateTime,
-                                                     tz = "UTC")) %>%
+    dplyr::select(siteID, horizontalPosition, startDateTime, surfWaterTempMean) %>%
+    dplyr::mutate(horizontalPosition = dplyr::case_when(
+      grepl("^101(\\.|$)", horizontalPosition) ~ "S1",
+      grepl("^102(\\.|$)", horizontalPosition) ~ "S2",
+      TRUE ~ as.character(horizontalPosition)),
+    startDateTime = lubridate::with_tz(startDateTime,
+                                       tz = "UTC")) %>%
     dplyr::rename(DateTime_UTC = startDateTime,
                   WaterTemp_C = surfWaterTempMean) %>%
     dplyr::filter(lubridate::minute(DateTime_UTC) %in% c(0, 15, 30, 45))
@@ -219,7 +224,7 @@ request_NEON <- function(NEONsites, startdate = NA, enddate = NA, APIkey = NA_ch
     dplyr::filter(lubridate::minute(DateTime_UTC) %in% c(0, 15, 30, 45))
 
   ### Merge all into data dataframe ###
-  data <- dplyr::full_join(WQ_data, NO3_data, by = c("siteID","DateTime_UTC"))
+  data <- dplyr::full_join(WQ_data, NO3_data, by = c("siteID", "horizontalPosition", "DateTime_UTC"))
   data <- dplyr::full_join(data, Temp_data,
                            by = c("siteID","horizontalPosition","DateTime_UTC"))
   data <- dplyr::full_join(data, AirPres_data, by = c("siteID","DateTime_UTC"))
@@ -232,11 +237,12 @@ request_NEON <- function(NEONsites, startdate = NA, enddate = NA, APIkey = NA_ch
     WaterQual$sensor_positions_20288 %>%
     dplyr::filter(positionEndDateTime == "") %>%
     dplyr::select(siteID, HOR.VER, locationReferenceLongitude) %>%
-    dplyr::mutate(HOR.VER = regmatches(HOR.VER, regexpr(pattern = "^\\d{3}",
-                                                        text = HOR.VER)),
-                  HOR.VER = dplyr::recode(HOR.VER, "101" = "S1", "102" = "S2")) %>%
-    dplyr::filter(HOR.VER == "S1" | HOR.VER == "S2") %>%
-    dplyr::rename(horizontalPosition = HOR.VER)
+    dplyr::mutate(horizontalPosition = dplyr::case_when(
+      grepl("^101(\\.|$)", HOR.VER) ~ "S1",
+      grepl("^102(\\.|$)", HOR.VER) ~ "S2",
+      TRUE ~ NA_character_
+    )) %>%
+    dplyr::filter(!is.na(horizontalPosition))
 
   # Add longitude for use in solartime conversion
   data <- dplyr::full_join(data, sensorPos, by = c("siteID","horizontalPosition"))
