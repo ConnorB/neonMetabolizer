@@ -10,7 +10,8 @@ request_NEON(
   enddate = NA,
   APIkey = NA_character_,
   nCores = 1,
-  reaerationPlotPath
+  reaerationPlotPath,
+  include_provisional = TRUE
 )
 }
 \arguments{
@@ -30,6 +31,8 @@ data request}
 
 \item{reaerationPlotPath}{string containing file path for where to save travel time plots,
 ex. \code{reaerationPlotPath = paste0(getwd(), "/data/rawData/reaerationPlots/")}}
+
+\item{include_provisional}{logical, whether to include provisional NEON data in the request.}
 }
 \value{
 List of four dataframes, \code{data}, \code{k600_clean}, \code{k600_fit}, and

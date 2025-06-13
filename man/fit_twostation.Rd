@@ -4,7 +4,18 @@
 \alias{fit_twostation}
 \title{Model two-station stream metabolism}
 \usage{
-fit_twostation(data, modType, nbatch = 1e+05)
+fit_twostation(
+  data,
+  modType,
+  nbatch = 1e+05,
+  gas,
+  n = 0.5,
+  K600_mean = NULL,
+  K600_sd = NULL,
+  upstreamName = "S1",
+  downstreamName = "S2",
+  eqn = NULL
+)
 }
 \arguments{
 \item{data}{The output from @request_NEON function, a list of 4 objects: \code{data}: dataframe containing raw site data, \code{k600_clean}: Dataframe of summarized K600 estimates and parameters used for calculations,\code{k600_fit}: Linear model output for the relationship between mean Q and K600 at the site, \code{k600_expanded}: dataframe of all data used in K600 calculations}

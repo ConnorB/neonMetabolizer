@@ -33,7 +33,7 @@
 #' @param nCores The number of cores to parallelize stacking NEON tables, default is 1
 #' @param reaerationPlotPath string containing file path for where to save travel time plots,
 #'    ex. `reaerationPlotPath = paste0(getwd(), "/data/rawData/reaerationPlots/")`
-#'
+#' @param include_provisional logical, whether to include provisional NEON data in the request.
 #' @return List of four dataframes, `data`, `k600_clean`, `k600_fit`, and
 #'    `k600_expanded`. NOTE: Explain in detail what these dataframes contain.
 #'
@@ -50,7 +50,7 @@
 #' }
 #'
 #' @export
-request_NEON <- function(NEONsites, startdate = NA, enddate = NA, APIkey = NA_character_, nCores = 1, reaerationPlotPath){
+request_NEON <- function(NEONsites, startdate = NA, enddate = NA, APIkey = NA_character_, nCores = 1, reaerationPlotPath, include_provisional = TRUE){
   #### Input parameters ######################################################
   # Define parameters of interest necessary for metabolism modeling
   params <- c("DP1.20288.001", "DP1.20053.001", "DP1.00024.001",
@@ -73,6 +73,7 @@ request_NEON <- function(NEONsites, startdate = NA, enddate = NA, APIkey = NA_ch
                                                 startdate = startdate, enddate = enddate,
                                                 token = APIkey,
                                                 nCores = nCores,
+                                                include.provisional = include_provisional,
                                                 package = "basic", check.size = F))
   }
 
@@ -82,12 +83,14 @@ request_NEON <- function(NEONsites, startdate = NA, enddate = NA, APIkey = NA_ch
                                              package = "expanded",
                                              token = APIkey,
                                              nCores = nCores,
+                                             include.provisional = include_provisional,
                                              check.size = F)
   FieldDischarge <- neonUtilities::loadByProduct(dpID = "DP1.20048.001",
                                                  site = NEONsites,
                                                  token = APIkey,
                                                  nCores = nCores,
                                                  package = "expanded",
+                                                 include.provisional = include_provisional,
                                                  check.size = F)
 
   # NOTE: as of 18-Jan-2022, Water Quality data product now includes local DO

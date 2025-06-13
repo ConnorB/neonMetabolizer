@@ -5,21 +5,24 @@
 \title{\code{twostationpostsum} Calculate two station MCMC or Bayes during one day.}
 \usage{
 twostationpostsum(
-  O2data,
+  data,
   upName,
   downName,
   start,
   z,
   tt,
-  Kmean,
-  Ksd,
+  K600mean,
+  K600sd,
   nbatch,
   scale,
-  modType
+  modType,
+  gas,
+  n,
+  eqn
 )
 }
 \arguments{
-\item{O2data}{Dataframe containing formatted raw two station data, as returned by request_NEON in $data}
+\item{data}{Dataframe containing formatted raw two station data, as returned by request_NEON in $data}
 
 \item{upName}{Character string denoting name of upstream station (ex. "S1")}
 
@@ -31,15 +34,17 @@ twostationpostsum(
 
 \item{tt}{Numeric, travel time between stations on day of modeling}
 
-\item{Kmean}{Mean K for informative prior}
+\item{K600mean}{Mean K600 for informative prior}
 
-\item{Ksd}{Standard deviation of K for informative prior}
+\item{K600sd}{Standard deviation of K600 for informative prior}
 
 \item{nbatch}{Number of MCMC trials}
 
 \item{scale}{Description}
 
 \item{modType}{Description}
+
+\item{gas}{Either "O2" or "N2" denoting gas type}
 }
 \value{
 Populate here

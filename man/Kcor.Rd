@@ -2,14 +2,18 @@
 % Please edit documentation in R/Kcor.R
 \name{Kcor}
 \alias{Kcor}
-\title{\code{Kcor} Estimate K, given water temperature and K600 values}
+\title{\code{Kcor} Estimate kO2, given water temperature and K600 values}
 \usage{
-Kcor(temp, K600)
+Kcor(temp, K600, gas, n = 0.5)
 }
 \arguments{
 \item{temp}{Water temperature in degrees C}
 
 \item{K600}{Normalized K600 reaeration rate}
+
+\item{gas}{Either "O2" or "N2", used for calculating Schmidt number}
+
+\item{n}{Default is 0.5 for wavy water, but 0.667 refers to still water, see Jahne 1987}
 }
 \value{
 Populate here
